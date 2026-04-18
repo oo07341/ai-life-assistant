@@ -20,7 +20,7 @@
       <div class="tabs-container">
         <el-tabs v-model="activeTab" type="border-card" class="main-tabs">
           <el-tab-pane label="🔍 AI智能比价" name="price">
-            <PriceComparisonStable
+            <PriceComparison
               ref="priceComparisonRef"
               @add-to-schedule="handleAddToSchedule"
             />
@@ -181,7 +181,7 @@ import {
   ArrowRight,
 } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import PriceComparisonStable from "../components/PriceComparison-stable.vue";
+import PriceComparison from "../components/PriceComparison.vue";
 import ScheduleGenerator from "../components/ScheduleGenerator.vue";
 
 // 响应式数据

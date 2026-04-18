@@ -17,7 +17,6 @@
               type="primary"
               :loading="isAnalyzing"
               @click="handleSearch"
-              :icon="Search"
             >
               {{ isAnalyzing ? "AI分析中..." : "智能比价" }}
             </el-button>
@@ -48,13 +47,18 @@
               </div>
 
               <div class="intent-item">
-                <strong>搜索关键词：</strong>
+                <strong>分析意图：</strong>
+                <el-tag type="success">{{ intentResult.intent }}</el-tag>
+              </div>
+
+              <div class="intent-item">
+                <strong>推荐关键词：</strong>
                 <div class="keywords">
                   <el-tag
-                    v-for="(keyword, index) in intentResult.keywords"
-                    :key="index"
+                    v-for="keyword in intentResult.keywords"
+                    :key="keyword"
                     type="primary"
-                    class="keyword-tag"
+                    size="small"
                   >
                     {{ keyword }}
                   </el-tag>
@@ -65,19 +69,14 @@
                 <strong>推荐平台：</strong>
                 <div class="platforms">
                   <el-tag
-                    v-for="(platform, index) in intentResult.platforms"
-                    :key="index"
-                    type="success"
-                    class="platform-tag"
+                    v-for="platform in intentResult.platforms"
+                    :key="platform"
+                    type="warning"
+                    size="small"
                   >
                     {{ platform }}
                   </el-tag>
                 </div>
-              </div>
-
-              <div class="intent-item">
-                <strong>AI建议：</strong>
-                <p class="advice">{{ intentResult.advice }}</p>
               </div>
             </div>
           </el-card>
@@ -88,140 +87,126 @@
     <!-- 比价结果 -->
     <div v-if="showResults" class="results-section">
       <div class="results-header">
-        <h3>💰 比价结果（{{ products.length }}个商品）</h3>
+        <h3>💰 比价结果 ({{ filteredProducts.length }}个商品)</h3>
         <div class="filter-controls">
           <el-select
             v-model="selectedPlatform"
             placeholder="筛选平台"
             size="small"
-            @change="filterByPlatform"
+            clearable
           >
-            <el-option label="全部平台" value=""></el-option>
             <el-option
-              v-for="platform in uniquePlatforms"
+              v-for="platform in platforms"
               :key="platform"
               :label="platform"
               :value="platform"
             />
           </el-select>
 
-          <el-select
-            v-model="sortBy"
-            placeholder="排序方式"
-            size="small"
-            @change="sortProducts"
-          >
-            <el-option label="价格从低到高" value="price-asc"></el-option>
-            <el-option label="价格从高到低" value="price-desc"></el-option>
-            <el-option label="评分从高到低" value="rating-desc"></el-option>
-            <el-option label="销量从高到低" value="sales-desc"></el-option>
+          <el-select v-model="sortBy" placeholder="排序方式" size="small">
+            <el-option label="价格从低到高" value="price-asc" />
+            <el-option label="价格从高到低" value="price-desc" />
+            <el-option label="评分从高到低" value="rating-desc" />
           </el-select>
+
+          <el-button type="text" @click="resetFilters">重置筛选</el-button>
         </div>
       </div>
 
-      <!-- 商品卡片列表 -->
       <div class="products-grid">
         <el-card
           v-for="product in filteredProducts"
           :key="product.id"
           class="product-card"
-          :class="{ 'best-value': isBestValue(product) }"
+          :class="{ 'best-value': product.isBestValue }"
         >
           <template #header>
-            <div class="product-header">
-              <span class="product-image">{{ product.image }}</span>
-              <div class="product-title">
-                <h4>{{ product.name }}</h4>
-                <div class="product-platform">
-                  <el-tag
-                    size="small"
-                    :type="getPlatformType(product.platform)"
-                  >
-                    {{ product.platform }}
-                  </el-tag>
-                </div>
+            <div class="card-header">
+              <span class="product-name">{{ product.name }}</span>
+              <div class="platform-tags">
+                <el-tag :type="getPlatformType(product.platform)" size="small">
+                  {{ product.platform }}
+                </el-tag>
+                <el-tag v-if="product.isBestValue" type="danger" size="small">
+                  最佳性价比
+                </el-tag>
               </div>
             </div>
           </template>
 
           <div class="product-content">
-            <!-- 价格信息 -->
             <div class="price-info">
-              <div class="current-price">
-                <span class="price-label">现价：</span>
-                <span class="price-value">¥{{ product.price }}</span>
+              <div class="price-value">¥{{ product.price }}</div>
+              <div v-if="product.originalPrice" class="price-original">
+                原价: ¥{{ product.originalPrice }}
               </div>
-              <div class="original-price">
-                <span class="price-label">原价：</span>
-                <span class="price-original">¥{{ product.originalPrice }}</span>
-              </div>
-              <div class="discount">
-                <el-tag type="danger" size="small">
-                  省¥{{ product.originalPrice - product.price }}
+              <div v-if="product.discount" class="discount">
+                <el-tag type="success" size="small">
+                  {{ product.discount }}折
                 </el-tag>
               </div>
             </div>
 
-            <!-- 商品信息 -->
             <div class="product-details">
               <div class="detail-item">
+                <el-icon><Location /></el-icon>
+                <span>{{ product.shopName }}</span>
+              </div>
+              <div class="detail-item">
                 <el-icon><Star /></el-icon>
-                <span>评分：{{ product.rating }}</span>
+                <span>评分: {{ product.rating }}/5.0</span>
               </div>
               <div class="detail-item">
-                <el-icon><Sold /></el-icon>
-                <span>销量：{{ product.sales.toLocaleString() }}</span>
-              </div>
-              <div class="detail-item">
-                <el-icon><Clock /></el-icon>
-                <span>配送：{{ product.deliveryTime }}</span>
+                <el-icon><Timer /></el-icon>
+                <span>预计送达: {{ product.deliveryTime }}</span>
               </div>
             </div>
 
-            <!-- 操作按钮 -->
+            <div class="product-description">
+              {{ product.description }}
+            </div>
+
             <div class="product-actions">
               <el-button
                 type="primary"
-                size="small"
-                @click="openApp(product)"
                 class="buy-button"
+                @click="handleBuy(product)"
               >
-                <el-icon><ShoppingCart /></el-icon>
-                去购买
+                一键购买
               </el-button>
-
               <el-button
                 type="success"
-                size="small"
-                @click="addToSchedule(product)"
                 class="schedule-button"
+                @click="handleAddToSchedule(product)"
               >
-                <el-icon><Calendar /></el-icon>
                 添加到日程
               </el-button>
             </div>
           </div>
-
-          <!-- 最佳性价比标识 -->
-          <div v-if="isBestValue(product)" class="best-value-badge">
-            <el-icon><Trophy /></el-icon>
-            <span>最佳性价比</span>
-          </div>
         </el-card>
       </div>
 
-      <!-- 空状态 -->
-      <div v-if="filteredProducts.length === 0" class="empty-state">
-        <el-empty description="没有找到符合条件的商品">
-          <el-button type="primary" @click="resetFilters">重置筛选</el-button>
-        </el-empty>
+      <div v-if="filteredProducts.length === 0" class="no-results">
+        <p>没有找到符合条件的商品，请调整筛选条件</p>
       </div>
     </div>
 
-    <!-- 加载状态 -->
-    <div v-if="isLoading" class="loading-overlay">
-      <el-icon class="loading-icon"><Loading /></el-icon>
-      <p>正在搜索商品...</p>
+    <!-- 购买建议 -->
+    <div
+      v-if="showResults && filteredProducts.length > 0"
+      class="advice-section"
+    >
+      <el-card class="advice-card">
+        <template #header>
+          <div class="card-header">
+            <el-icon><InfoFilled /></el-icon>
+            <span>AI购买建议</span>
+          </div>
+        </template>
+        <p class="advice">
+          {{ getAdvice() }}
+        </p>
+      </el-card>
     </div>
   </div>
 </template>
@@ -229,255 +214,163 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import {
-  Search,
-  Loading,
   MagicStick,
+  Loading,
+  Location,
   Star,
-  Sold,
-  Clock,
-  ShoppingCart,
-  Calendar,
-  Trophy,
+  Timer,
+  InfoFilled,
 } from "@element-plus/icons-vue";
-import { ElMessage, ElMessageBox } from "element-plus";
+import { ElMessage } from "element-plus";
 
 // 响应式数据
-const searchQuery = ref("我想吃披萨");
+const searchQuery = ref("");
 const isAnalyzing = ref(false);
-const isLoading = ref(false);
 const showAIAnalysis = ref(false);
 const showResults = ref(false);
-
-// 意图分析结果
 const intentResult = ref(null);
-
-// 商品数据
-const products = ref([]);
-const filteredProducts = ref([]);
 const selectedPlatform = ref("");
 const sortBy = ref("price-asc");
 
-// 模拟API调用 - 分析用户意图
-const analyzeIntent = async (query) => {
-  isAnalyzing.value = true;
-  showAIAnalysis.value = true;
+// 模拟数据
+const products = ref([
+  {
+    id: 1,
+    name: "必胜客超级至尊披萨",
+    platform: "美团",
+    price: 89.9,
+    originalPrice: 109.9,
+    discount: 8.2,
+    shopName: "必胜客中关村店",
+    rating: 4.8,
+    deliveryTime: "30分钟",
+    description: "12寸超级至尊披萨，适合3-4人分享，含芝士加倍",
+    isBestValue: true,
+  },
+  {
+    id: 2,
+    name: "必胜客超级至尊披萨",
+    platform: "饿了么",
+    price: 85.9,
+    originalPrice: 109.9,
+    discount: 7.8,
+    shopName: "必胜客中关村店",
+    rating: 4.7,
+    deliveryTime: "35分钟",
+    description: "12寸超级至尊披萨，满减优惠，配送费减免",
+    isBestValue: false,
+  },
+  {
+    id: 3,
+    name: "达美乐经典披萨",
+    platform: "达美乐APP",
+    price: 79.9,
+    originalPrice: 99.9,
+    discount: 8.0,
+    shopName: "达美乐披萨",
+    rating: 4.9,
+    deliveryTime: "30分钟",
+    description: "经典口味披萨，30分钟送达保证，热销产品",
+    isBestValue: false,
+  },
+  {
+    id: 4,
+    name: "棒约翰特色披萨",
+    platform: "美团",
+    price: 92.9,
+    originalPrice: 119.9,
+    discount: 7.7,
+    shopName: "棒约翰披萨",
+    rating: 4.6,
+    deliveryTime: "40分钟",
+    description: "特色风味披萨，使用进口奶酪，口感浓郁",
+    isBestValue: false,
+  },
+  {
+    id: 5,
+    name: "尊宝披萨套餐",
+    platform: "饿了么",
+    price: 75.9,
+    originalPrice: 95.9,
+    discount: 7.9,
+    shopName: "尊宝披萨",
+    rating: 4.5,
+    deliveryTime: "45分钟",
+    description: "披萨+小吃+饮料套餐，性价比高",
+    isBestValue: false,
+  },
+]);
 
-  try {
-    // 调用Mock API
-    const response = await fetch("http://localhost:3001/api/analyze-intent", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query }),
-    });
+// 计算属性
+const platforms = computed(() => {
+  const uniquePlatforms = new Set();
+  products.value.forEach((product) => {
+    uniquePlatforms.add(product.platform);
+  });
+  return Array.from(uniquePlatforms);
+});
 
-    const data = await response.json();
+const filteredProducts = computed(() => {
+  let filtered = [...products.value];
 
-    if (data.success) {
-      intentResult.value = data;
-      ElMessage.success("AI已分析您的需求");
-
-      // 自动搜索商品
-      await searchProducts(data.keywords[0]);
-    } else {
-      ElMessage.error("AI分析失败，请重试");
-    }
-  } catch (error) {
-    console.error("分析意图失败:", error);
-    // 使用模拟数据
-    intentResult.value = {
-      success: true,
-      intent: "比价购物",
-      keywords: ["披萨"],
-      platforms: ["美团", "饿了么"],
-      advice: "披萨建议选择连锁品牌，品质有保障。",
-      query: query,
-    };
-    ElMessage.warning("使用模拟数据演示");
-
-    // 自动搜索商品
-    await searchProducts("披萨");
-  } finally {
-    isAnalyzing.value = false;
-  }
-};
-
-// 搜索商品
-const searchProducts = async (keyword) => {
-  isLoading.value = true;
-  showResults.value = true;
-
-  try {
-    const response = await fetch(
-      `http://localhost:3001/api/search-products?keyword=${encodeURIComponent(keyword)}`,
+  // 平台筛选
+  if (selectedPlatform.value) {
+    filtered = filtered.filter(
+      (product) => product.platform === selectedPlatform.value,
     );
-    const data = await response.json();
-
-    if (data.success) {
-      products.value = data.products;
-      filteredProducts.value = [...data.products];
-      ElMessage.success(`找到${data.total}个商品`);
-    } else {
-      ElMessage.error("搜索商品失败");
-    }
-  } catch (error) {
-    console.error("搜索商品失败:", error);
-    // 使用模拟数据
-    products.value = [
-      {
-        id: 1,
-        name: "必胜客超级至尊披萨",
-        price: 89,
-        originalPrice: 108,
-        platform: "美团",
-        rating: 4.8,
-        sales: 1250,
-        deliveryTime: "30分钟",
-        urlScheme: "imeituan://",
-        image: "🍕",
-      },
-      {
-        id: 2,
-        name: "达美乐经典意式肉酱披萨",
-        price: 79,
-        originalPrice: 98,
-        platform: "饿了么",
-        rating: 4.7,
-        sales: 980,
-        deliveryTime: "35分钟",
-        urlScheme: "eleme://",
-        image: "🍕",
-      },
-    ];
-    filteredProducts.value = [...products.value];
-    ElMessage.warning("使用模拟数据演示");
-  } finally {
-    isLoading.value = false;
   }
-};
 
-// 处理搜索
-const handleSearch = () => {
+  // 排序
+  if (sortBy.value === "price-asc") {
+    filtered.sort((a, b) => a.price - b.price);
+  } else if (sortBy.value === "price-desc") {
+    filtered.sort((a, b) => b.price - a.price);
+  } else if (sortBy.value === "rating-desc") {
+    filtered.sort((a, b) => b.rating - a.rating);
+  }
+
+  return filtered;
+});
+
+// 方法
+const handleSearch = async () => {
   if (!searchQuery.value.trim()) {
     ElMessage.warning("请输入搜索内容");
     return;
   }
 
-  analyzeIntent(searchQuery.value);
+  isAnalyzing.value = true;
+  showAIAnalysis.value = true;
+
+  // 模拟AI分析
+  setTimeout(() => {
+    intentResult.value = {
+      query: searchQuery.value,
+      intent: "餐饮外卖",
+      keywords: ["披萨", "外卖", "餐饮"],
+      platforms: ["美团", "饿了么", "达美乐APP"],
+    };
+
+    isAnalyzing.value = false;
+
+    // 显示结果
+    setTimeout(() => {
+      showResults.value = true;
+      ElMessage.success("AI分析完成，已找到比价结果");
+    }, 500);
+  }, 1500);
 };
 
-// 计算唯一平台列表
-const uniquePlatforms = computed(() => {
-  const platforms = new Set();
-  products.value.forEach((product) => platforms.add(product.platform));
-  return Array.from(platforms);
-});
+const handleBuy = (product) => {
+  ElMessage.success(`正在跳转到${product.platform}购买${product.name}`);
 
-// 根据平台筛选
-const filterByPlatform = () => {
-  if (!selectedPlatform.value) {
-    filteredProducts.value = [...products.value];
-  } else {
-    filteredProducts.value = products.value.filter(
-      (product) => product.platform === selectedPlatform.value,
-    );
-  }
-  sortProducts();
+  // 模拟跳转
+  setTimeout(() => {
+    window.open(`https://${product.platform}.com`, "_blank");
+  }, 1000);
 };
 
-// 排序商品
-const sortProducts = () => {
-  const sorted = [...filteredProducts.value];
-
-  switch (sortBy.value) {
-    case "price-asc":
-      sorted.sort((a, b) => a.price - b.price);
-      break;
-    case "price-desc":
-      sorted.sort((a, b) => b.price - a.price);
-      break;
-    case "rating-desc":
-      sorted.sort((a, b) => b.rating - a.rating);
-      break;
-    case "sales-desc":
-      sorted.sort((a, b) => b.sales - a.sales);
-      break;
-  }
-
-  filteredProducts.value = sorted;
-};
-
-// 判断是否为最佳性价比
-const isBestValue = (product) => {
-  if (filteredProducts.value.length === 0) return false;
-
-  // 简单算法：价格低且评分高
-  const bestProduct = filteredProducts.value.reduce((best, current) => {
-    const bestScore = best.rating / best.price;
-    const currentScore = current.rating / current.price;
-    return currentScore > bestScore ? current : best;
-  });
-
-  return product.id === bestProduct.id;
-};
-
-// 获取平台类型
-const getPlatformType = (platform) => {
-  const types = {
-    美团: "success",
-    饿了么: "warning",
-    京东: "danger",
-    淘宝: "danger",
-    拼多多: "info",
-  };
-  return types[platform] || "info";
-};
-
-// 打开App
-const openApp = (product) => {
-  ElMessageBox.confirm(
-    `即将打开${product.platform}App，如果未安装将跳转到下载页面`,
-    "打开App",
-    {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "info",
-    },
-  )
-    .then(() => {
-      // 尝试打开App
-      window.location.href = product.urlScheme;
-
-      // 2秒后检查是否成功
-      setTimeout(() => {
-        if (!document.hidden) {
-          // 打开失败，跳转到下载页面
-          const downloadUrls = {
-            美团: "https://apps.apple.com/cn/app/id423084029",
-            饿了么: "https://apps.apple.com/cn/app/id507161324",
-            京东: "https://apps.apple.com/cn/app/id414245413",
-            淘宝: "https://apps.apple.com/cn/app/id387682726",
-            拼多多: "https://apps.apple.com/cn/app/id1044283059",
-          };
-
-          const downloadUrl =
-            downloadUrls[product.platform] ||
-            "https://www.apple.com/app-store/";
-          window.open(downloadUrl, "_blank");
-
-          ElMessage.info("已为您打开下载页面");
-        }
-      }, 2000);
-    })
-    .catch(() => {
-      // 用户取消
-    });
-};
-
-// 添加到日程
-const addToSchedule = (product) => {
-  // 触发自定义事件，让父组件处理
+const handleAddToSchedule = (product) => {
   const event = new CustomEvent("add-to-schedule", {
     detail: {
       product: product,
@@ -489,35 +382,41 @@ const addToSchedule = (product) => {
   ElMessage.success("已准备添加到日程");
 };
 
-// 重置筛选
+const getPlatformType = (platform) => {
+  const types = {
+    美团: "success",
+    饿了么: "warning",
+    达美乐APP: "danger",
+  };
+  return types[platform] || "info";
+};
+
+const getAdvice = () => {
+  const bestProduct = products.value.find((p) => p.isBestValue);
+  if (bestProduct) {
+    return `推荐选择${bestProduct.platform}的"${bestProduct.name}"，价格¥${bestProduct.price}，评分${bestProduct.rating}，性价比最高。`;
+  }
+  return "根据您的需求，我们推荐选择评分较高且价格合理的商品。";
+};
+
 const resetFilters = () => {
   selectedPlatform.value = "";
   sortBy.value = "price-asc";
-  filteredProducts.value = [...products.value];
 };
 
-// 初始化时自动搜索
+// 初始化时自动搜索示例
 onMounted(() => {
-  // 延迟执行，确保UI已渲染
-  setTimeout(() => {
-    handleSearch();
-  }, 500);
+  searchQuery.value = "我想吃披萨";
 });
 </script>
 
 <style scoped>
 .price-comparison {
-  max-width: 1200px;
-  margin: 0 auto;
   padding: 20px;
 }
 
-.search-section {
-  margin-bottom: 40px;
-}
-
 .search-section h2 {
-  font-size: 28px;
+  font-size: 24px;
   color: #333;
   margin-bottom: 8px;
 }
@@ -525,30 +424,28 @@ onMounted(() => {
 .subtitle {
   color: #666;
   margin-bottom: 24px;
-  font-size: 16px;
 }
 
 .search-box {
-  max-width: 600px;
-  margin: 0 auto 30px;
+  margin-bottom: 30px;
 }
 
 .ai-analysis {
-  margin-top: 30px;
+  margin: 30px 0;
 }
 
 .ai-thinking {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: #f5f7fa;
+  gap: 12px;
+  padding: 16px;
+  background: #f0f9ff;
   border-radius: 8px;
   margin-bottom: 20px;
 }
 
 .thinking-icon {
-  margin-right: 10px;
+  color: #409eff;
   animation: spin 1s linear infinite;
 }
 
@@ -596,19 +493,6 @@ onMounted(() => {
   gap: 8px;
 }
 
-.keyword-tag,
-.platform-tag {
-  margin-right: 8px;
-}
-
-.advice {
-  margin: 0;
-  padding: 12px;
-  background: #f0f9ff;
-  border-radius: 6px;
-  border-left: 4px solid #409eff;
-}
-
 .results-section {
   margin-top: 40px;
 }
@@ -629,6 +513,7 @@ onMounted(() => {
 .filter-controls {
   display: flex;
   gap: 12px;
+  align-items: center;
 }
 
 .products-grid {
@@ -652,52 +537,29 @@ onMounted(() => {
 }
 
 .product-card.best-value {
-  border-color: #ffd700;
-  background: linear-gradient(135deg, #fff9e6 0%, #fff 100%);
+  border-color: #f56c6c;
 }
 
-.product-header {
+.card-header {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
-.product-image {
-  font-size: 40px;
-}
-
-.product-title h4 {
-  margin: 0 0 8px 0;
+.product-name {
+  font-weight: bold;
   font-size: 16px;
   color: #333;
-  line-height: 1.4;
+  flex: 1;
 }
 
-.product-platform {
-  margin-top: 4px;
-}
-
-.product-content {
-  padding: 16px 0;
+.platform-tags {
+  display: flex;
+  gap: 8px;
 }
 
 .price-info {
   margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.current-price,
-.original-price {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.price-label {
-  color: #666;
-  font-size: 14px;
 }
 
 .price-value {
@@ -710,10 +572,10 @@ onMounted(() => {
   font-size: 14px;
   color: #999;
   text-decoration: line-through;
+  margin-top: 4px;
 }
 
 .discount {
-  text-align: right;
   margin-top: 8px;
 }
 
@@ -736,10 +598,16 @@ onMounted(() => {
   color: #409eff;
 }
 
+.product-description {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
 .product-actions {
   display: flex;
   gap: 12px;
-  margin-top: 20px;
 }
 
 .buy-button,
@@ -747,64 +615,34 @@ onMounted(() => {
   flex: 1;
 }
 
-.best-value-badge {
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
-  color: #333;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  box-shadow: 0 2px 8px rgba(255, 165, 0, 0.3);
-  z-index: 1;
-}
-
-.empty-state {
-  margin: 60px 0;
+.no-results {
   text-align: center;
+  padding: 40px;
+  color: #999;
+  font-size: 16px;
 }
 
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
+.advice-section {
+  margin-top: 30px;
 }
 
-.loading-icon {
-  font-size: 48px;
-  color: #409eff;
-  margin-bottom: 20px;
-  animation: spin 1s linear infinite;
+.advice-card {
+  background: #f0f9ff;
+  border-color: #409eff;
 }
 
-.loading-overlay p {
-  font-size: 18px;
+.advice {
+  margin: 0;
+  padding: 12px;
+  background: #f0f9ff;
+  border-radius: 6px;
+  border-left: 4px solid #409eff;
   color: #333;
+  line-height: 1.6;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .price-comparison {
-    padding: 16px;
-  }
-
-  .search-section h2 {
-    font-size: 24px;
-  }
-
   .results-header {
     flex-direction: column;
     align-items: flex-start;
@@ -813,22 +651,11 @@ onMounted(() => {
 
   .filter-controls {
     width: 100%;
-    justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   .products-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .product-card {
-    margin-bottom: 16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .search-box {
-    margin-bottom: 20px;
   }
 
   .intent-item {
@@ -839,15 +666,6 @@ onMounted(() => {
 
   .intent-item strong {
     min-width: auto;
-  }
-
-  .product-actions {
-    flex-direction: column;
-  }
-
-  .buy-button,
-  .schedule-button {
-    width: 100%;
   }
 }
 </style>
