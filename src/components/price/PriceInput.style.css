@@ -1,0 +1,148 @@
+.input-card {
+  height: fit-content;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.card-header .el-icon {
+  font-size: 18px;
+  color: #667eea;
+}
+
+.input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.query-input :deep(.el-textarea__inner) {
+  font-size: 14px;
+  line-height: 1.5;
+  border-color: #e2e8f0;
+  transition: border-color 0.3s ease;
+}
+
+.query-input :deep(.el-textarea__inner):focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.input-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* AI分析结果样式 */
+.analysis-result {
+  margin-top: 24px;
+  padding: 20px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.result-header .el-icon {
+  color: #f6ad55;
+}
+
+.result-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.item-label {
+  font-weight: 500;
+  color: #4a5568;
+  min-width: 80px;
+}
+
+.item-value {
+  color: #1a202c;
+  font-weight: 500;
+}
+
+/* 使用提示样式 */
+.usage-tips {
+  margin-top: 24px;
+  padding: 16px;
+  background: #f0fff4;
+  border-radius: 8px;
+  border-left: 4px solid #48bb78;
+}
+
+.tips-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #276749;
+}
+
+.tips-header .el-icon {
+  color: #48bb78;
+}
+
+.tips-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tips-list li {
+  padding: 4px 0;
+  color: #276749;
+  font-size: 13px;
+  position: relative;
+  padding-left: 16px;
+}
+
+.tips-list li:before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #48bb78;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .input-actions {
+    flex-direction: column;
+  }
+
+  .input-actions .el-button {
+    width: 100%;
+  }
+
+  .result-item {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .item-label {
+    min-width: auto;
+  }
+}

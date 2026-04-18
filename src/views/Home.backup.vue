@@ -46,9 +46,9 @@
 <script setup>
 import { ref } from "vue";
 import { ElMessage } from "element-plus";
-import HeroSection from "../components/home/HeroSection.vue";
-import FeaturesSection from "../components/home/FeaturesSection.vue";
-import WorkflowSection from "../components/home/WorkflowSection.vue";
+import HeroSection from "@/components/home/HeroSection.vue";
+import FeaturesSection from "@/components/home/FeaturesSection.vue";
+import WorkflowSection from "@/components/home/WorkflowSection.vue";
 
 // 对话框控制
 const showAboutDialog = ref(false);

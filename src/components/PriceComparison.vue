@@ -342,23 +342,153 @@ const handleSearch = async () => {
   isAnalyzing.value = true;
   showAIAnalysis.value = true;
 
-  // 模拟AI分析
-  setTimeout(() => {
+  try {
+    // 调用真实AI分析API
+    const response = await fetch("http://localhost:3001/api/analyze-intent", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: searchQuery.value,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API请求失败: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      intentResult.value = {
+        query: data.query,
+        intent: data.intent,
+        keywords: data.keywords,
+        platforms: data.platforms,
+        advice: data.advice,
+        source: data.source || "mock_data",
+      };
+
+      // 根据AI分析结果搜索商品
+      await searchProducts(data.keywords[0] || searchQuery.value);
+
+      ElMessage.success(
+        `AI分析完成 (${data.source === "deepseek_ai" ? "DeepSeek AI" : "Mock数据"})`,
+      );
+    } else {
+      throw new Error(data.error || "AI分析失败");
+    }
+  } catch (error) {
+    console.error("AI分析错误:", error);
+
+    // 降级到模拟AI分析
     intentResult.value = {
       query: searchQuery.value,
-      intent: "餐饮外卖",
-      keywords: ["披萨", "外卖", "餐饮"],
-      platforms: ["美团", "饿了么", "达美乐APP"],
+      intent: "通用购物",
+      keywords: [searchQuery.value],
+      platforms: ["京东", "淘宝", "拼多多"],
+      advice: "根据您的需求，我们推荐选择信誉好的平台购买。",
+      source: "fallback",
     };
 
-    isAnalyzing.value = false;
+    // 使用模拟数据
+    await searchProducts(searchQuery.value);
 
-    // 显示结果
-    setTimeout(() => {
-      showResults.value = true;
-      ElMessage.success("AI分析完成，已找到比价结果");
-    }, 500);
-  }, 1500);
+    ElMessage.warning("AI分析失败，使用备用方案");
+  } finally {
+    isAnalyzing.value = false;
+    showResults.value = true;
+  }
+};
+
+// 搜索商品
+const searchProducts = async (keyword) => {
+  try {
+    const response = await fetch(
+      `http://localhost:3001/api/search-products?keyword=${encodeURIComponent(keyword)}`,
+    );
+
+    if (!response.ok) {
+      throw new Error(`商品搜索失败: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success && data.products.length > 0) {
+      // 转换API返回的商品格式为组件需要的格式
+      products.value = data.products.map((product, index) => ({
+        id: product.id || index + 1,
+        name: product.name,
+        platform: product.platform,
+        price: product.price,
+        originalPrice: product.originalPrice || product.price * 1.2,
+        discount: product.originalPrice
+          ? Math.round((1 - product.price / product.originalPrice) * 100)
+          : 20,
+        shopName: product.shopName || `${product.platform}官方店`,
+        rating: product.rating || 4.5,
+        deliveryTime: product.deliveryTime || "1-3天",
+        description:
+          product.description || `来自${product.platform}的${product.name}`,
+        isBestValue: index === 0, // 第一个商品作为最佳推荐
+      }));
+    } else {
+      // 如果没有搜索结果，使用模拟数据
+      useMockProducts(keyword);
+    }
+  } catch (error) {
+    console.error("商品搜索错误:", error);
+    // 降级到模拟数据
+    useMockProducts(keyword);
+  }
+};
+
+// 使用模拟商品数据（降级方案）
+const useMockProducts = (keyword) => {
+  const mockProducts = [
+    {
+      id: 1,
+      name: `${keyword} 商品A`,
+      platform: "京东",
+      price: 99,
+      originalPrice: 129,
+      discount: 23,
+      shopName: "京东官方店",
+      rating: 4.5,
+      deliveryTime: "次日达",
+      description: `来自京东的${keyword}商品，品质保证`,
+      isBestValue: true,
+    },
+    {
+      id: 2,
+      name: `${keyword} 商品B`,
+      platform: "淘宝",
+      price: 149,
+      originalPrice: 199,
+      discount: 25,
+      shopName: "淘宝旗舰店",
+      rating: 4.3,
+      deliveryTime: "3天",
+      description: `来自淘宝的${keyword}商品，价格优惠`,
+      isBestValue: false,
+    },
+    {
+      id: 3,
+      name: `${keyword} 商品C`,
+      platform: "拼多多",
+      price: 79,
+      originalPrice: 99,
+      discount: 20,
+      shopName: "拼多多品牌店",
+      rating: 4.2,
+      deliveryTime: "4天",
+      description: `来自拼多多的${keyword}商品，性价比高`,
+      isBestValue: false,
+    },
+  ];
+
+  products.value = mockProducts;
 };
 
 const handleBuy = (product) => {

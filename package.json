@@ -13,10 +13,12 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "element-plus": "^2.13.7",
     "express": "^5.2.1",
     "ics": "^3.11.0",
-    "vue": "^3.5.32"
+    "vue": "^3.5.32",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.5",

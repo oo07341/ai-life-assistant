@@ -237,13 +237,16 @@ async function callAIScheduleAPI(query, extraInfo = {}) {
   };
 
   try {
-    const response = await fetch("/api/generate_schedule", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      "http://localhost:3001/api/generate_schedule",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
       },
-      body: JSON.stringify(requestBody),
-    });
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP错误: ${response.status}`);
@@ -252,7 +255,11 @@ async function callAIScheduleAPI(query, extraInfo = {}) {
     const data = await response.json();
 
     if (data.success && Array.isArray(data.events)) {
-      return data.events;
+      return {
+        events: data.events,
+        source: data.source || "mock_data",
+        message: data.message || "AI已成功根据您的需求规划日程",
+      };
     } else {
       throw new Error("后端返回格式错误");
     }
@@ -278,6 +285,8 @@ async function generateSchedule() {
     };
 
     let events;
+    let source = "mock_data";
+    let message = "AI已成功根据您的需求规划日程";
 
     // 使用组件顶部定义的useMock变量
     if (useMock) {
@@ -285,7 +294,21 @@ async function generateSchedule() {
       events = currentMockEvents.value;
     } else {
       // 调用真实API
-      events = await callAIScheduleAPI(query, extraInfo);
+      try {
+        const result = await callAIScheduleAPI(query, extraInfo);
+        events = result.events;
+        source = result.source || "mock_data";
+        message = result.message || message;
+
+        console.log(
+          `AI日程规划成功 (${source === "deepseek_ai" ? "DeepSeek AI" : "Mock数据"})`,
+        );
+      } catch (apiError) {
+        console.error("API调用失败，降级到Mock数据:", apiError);
+        events = currentMockEvents.value;
+        source = "fallback";
+        message = "API调用失败，已使用备用方案生成日程";
+      }
     }
 
     // 生成ICS文件
@@ -304,7 +327,16 @@ async function generateSchedule() {
         googleCalendarLink.value = generateGoogleCalendarLink(firstEvent);
         outlookCalendarLink.value = generateOutlookCalendarLink(firstEvent);
 
-        successMessage.value = "📅 日程已生成！";
+        // 调试信息：显示生成的事件详情
+        console.log("📅 生成的日程事件:", {
+          query: query,
+          eventsCount: events.length,
+          firstEvent: firstEvent,
+          googleLink: googleCalendarLink.value,
+          outlookLink: outlookCalendarLink.value,
+        });
+
+        successMessage.value = `📅 ${message} (${source === "deepseek_ai" ? "DeepSeek AI" : source === "mock_data" ? "Mock数据" : "备用方案"})`;
         showCalendarOptions.value = true;
       }
     } else {
