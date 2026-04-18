@@ -8,7 +8,7 @@
       <div class="search-box">
         <el-input
           v-model="searchQuery"
-          placeholder="例如：我想吃披萨、想买手机、想喝咖啡..."
+          placeholder="例如：我想吃披萨、想吃汉堡..."
           size="large"
           @keyup.enter="handleSearch"
         >
@@ -344,7 +344,9 @@ const handleSearch = async () => {
 
   try {
     // 调用真实AI分析API
-    const response = await fetch("http://localhost:3001/api/analyze-intent", {
+    const apiBaseUrl =
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+    const response = await fetch(`${apiBaseUrl}/api/analyze-intent`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -405,8 +407,10 @@ const handleSearch = async () => {
 // 搜索商品
 const searchProducts = async (keyword) => {
   try {
+    const apiBaseUrl =
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
     const response = await fetch(
-      `http://localhost:3001/api/search-products?keyword=${encodeURIComponent(keyword)}`,
+      `${apiBaseUrl}/api/search-products?keyword=${encodeURIComponent(keyword)}`,
     );
 
     if (!response.ok) {

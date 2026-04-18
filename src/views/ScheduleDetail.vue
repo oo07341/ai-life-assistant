@@ -16,12 +16,10 @@
       <div class="left-panel">
         <ScheduleInput
           :schedule-query="scheduleQuery"
-          :shop-name="shopName"
-          :address="address"
+          :time-location="timeLocation"
           :is-generating="isGenerating"
           @update:schedule-query="scheduleQuery = $event"
-          @update:shop-name="shopName = $event"
-          @update:address="address = $event"
+          @update:time-location="timeLocation = $event"
           @generate="generateSchedule"
           @clear="clearInput"
         />
@@ -59,8 +57,7 @@ import CalendarPreview from "@/components/schedule/CalendarPreview.vue";
 
 // 响应式数据
 const scheduleQuery = ref("");
-const shopName = ref("");
-const address = ref("");
+const timeLocation = ref("");
 const isGenerating = ref(false);
 const scheduleResult = ref(null);
 const events = ref([]);
@@ -83,7 +80,7 @@ const generateSchedule = async () => {
       intent: "购买披萨",
       time_slots: ["18:00-19:00", "19:30-20:30"],
       duration: "1小时",
-      location: address.value || "附近餐厅",
+      location: timeLocation.value || "附近餐厅",
       notes: "建议提前预订",
     };
 
@@ -96,7 +93,7 @@ const generateSchedule = async () => {
         end: new Date(
           Date.now() + 24 * 60 * 60 * 1000 + 60 * 60 * 1000,
         ).toISOString(), // 明天+1小时
-        location: address.value || "必胜客中关村店",
+        location: timeLocation.value || "必胜客中关村店",
         description: "购买超级至尊披萨",
       },
       {
@@ -125,8 +122,7 @@ const generateSchedule = async () => {
 // 清空输入
 const clearInput = () => {
   scheduleQuery.value = "";
-  shopName.value = "";
-  address.value = "";
+  timeLocation.value = "";
   scheduleResult.value = null;
   events.value = [];
 };
@@ -136,8 +132,7 @@ const addToHistory = () => {
   const historyItem = {
     id: Date.now(),
     query: scheduleQuery.value,
-    shop_name: shopName.value,
-    address: address.value,
+    time_location: timeLocation.value,
     event_count: events.value.length,
     timestamp: new Date().toISOString(),
     result: scheduleResult.value,
@@ -160,8 +155,7 @@ const addToHistory = () => {
 // 加载历史记录
 const loadHistory = (historyItem) => {
   scheduleQuery.value = historyItem.query;
-  shopName.value = historyItem.shop_name || "";
-  address.value = historyItem.address || "";
+  timeLocation.value = historyItem.time_location || "";
   scheduleResult.value = historyItem.result;
   events.value = historyItem.events || [];
 };

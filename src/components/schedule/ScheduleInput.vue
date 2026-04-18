@@ -19,22 +19,12 @@
 
       <div class="extra-info">
         <div class="info-item">
-          <span class="label">店铺名称：</span>
+          <span class="label">时间地点：</span>
           <el-input
-            v-model="shopNameModel"
-            placeholder="可选，如：必胜客中关村店"
+            v-model="timeLocationModel"
+            placeholder="可选，如：明天下午3点，中关村"
             size="small"
-            class="shop-input"
-          />
-        </div>
-
-        <div class="info-item">
-          <span class="label">店铺地址：</span>
-          <el-input
-            v-model="addressModel"
-            placeholder="可选，如：中关村大街1号"
-            size="small"
-            class="address-input"
+            class="time-location-input"
           />
         </div>
       </div>
@@ -65,7 +55,7 @@
       </div>
       <ul class="tips-list">
         <li>描述您的日程需求，AI会为您规划最佳时间</li>
-        <li>可以包含店铺信息，生成更准确的日程</li>
+        <li>可以包含时间地点信息，生成更准确的日程</li>
         <li>生成的日历文件支持导入到手机日历</li>
         <li>支持多设备同步，随时随地查看日程</li>
       </ul>
@@ -87,11 +77,7 @@ const props = defineProps({
     type: String,
     default: "",
   },
-  shopName: {
-    type: String,
-    default: "",
-  },
-  address: {
+  timeLocation: {
     type: String,
     default: "",
   },
@@ -103,8 +89,7 @@ const props = defineProps({
 
 const emit = defineEmits([
   "update:schedule-query",
-  "update:shop-name",
-  "update:address",
+  "update:time-location",
   "generate",
   "clear",
 ]);
@@ -115,14 +100,9 @@ const scheduleQueryModel = computed({
   set: (value) => emit("update:schedule-query", value),
 });
 
-const shopNameModel = computed({
-  get: () => props.shopName,
-  set: (value) => emit("update:shop-name", value),
-});
-
-const addressModel = computed({
-  get: () => props.address,
-  set: (value) => emit("update:address", value),
+const timeLocationModel = computed({
+  get: () => props.timeLocation,
+  set: (value) => emit("update:time-location", value),
 });
 </script>
 
@@ -180,8 +160,7 @@ const addressModel = computed({
   min-width: 70px;
 }
 
-.shop-input,
-.address-input {
+.time-location-input {
   flex: 1;
 }
 

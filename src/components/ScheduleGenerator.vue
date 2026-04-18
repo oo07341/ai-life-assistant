@@ -19,8 +19,7 @@ const isLoading = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
 const userQuery = ref("我想吃披萨，选了必胜客超级至尊披萨");
-const extraShopName = ref("必胜客中关村店");
-const extraAddress = ref("中关村大街1号");
+const extraTimeLocation = ref("明天下午3点，中关村");
 const showCalendarOptions = ref(false);
 const googleCalendarLink = ref("");
 const outlookCalendarLink = ref("");
@@ -36,8 +35,7 @@ watch(
     if (newProduct) {
       // 自动填充商品信息
       userQuery.value = `我想购买${newProduct.name}，价格¥${newProduct.price}`;
-      extraShopName.value = newProduct.platform;
-      extraAddress.value = "根据平台定位";
+      extraTimeLocation.value = `${newProduct.platform}，根据平台定位`;
 
       // 显示提示
       successMessage.value = "已自动填充商品信息，点击生成日程按钮即可规划";
@@ -237,16 +235,15 @@ async function callAIScheduleAPI(query, extraInfo = {}) {
   };
 
   try {
-    const response = await fetch(
-      "http://localhost:3001/api/generate_schedule",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
+    const apiBaseUrl =
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+    const response = await fetch(`${apiBaseUrl}/api/generate_schedule`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify(requestBody),
+    });
 
     if (!response.ok) {
       throw new Error(`HTTP错误: ${response.status}`);
@@ -280,8 +277,7 @@ async function generateSchedule() {
     // 收集页面上下文信息 - 使用用户输入的值
     const query = userQuery.value || "我想吃披萨";
     const extraInfo = {
-      shop_name: extraShopName.value || "",
-      address: extraAddress.value || "",
+      time_location: extraTimeLocation.value || "",
     };
 
     let events;
@@ -390,22 +386,12 @@ async function generateSchedule() {
         <h4>额外信息（可选）：</h4>
         <div class="form-row">
           <div class="form-group">
-            <label for="shop-name">店铺名称：</label>
+            <label for="time-location">时间地点：</label>
             <input
-              id="shop-name"
+              id="time-location"
               type="text"
-              v-model="extraShopName"
-              placeholder="例如：必胜客中关村店"
-              :disabled="isLoading"
-            />
-          </div>
-          <div class="form-group">
-            <label for="address">地址：</label>
-            <input
-              id="address"
-              type="text"
-              v-model="extraAddress"
-              placeholder="例如：中关村大街1号"
+              v-model="extraTimeLocation"
+              placeholder="例如：明天下午3点，中关村"
               :disabled="isLoading"
             />
           </div>
