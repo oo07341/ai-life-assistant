@@ -1,6 +1,18 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch, computed } from "vue";
 import { createEvents } from "ics";
+
+// 定义props
+const props = defineProps({
+  selectedProduct: {
+    type: Object,
+    default: () => null,
+  },
+  searchQuery: {
+    type: String,
+    default: "",
+  },
+});
 
 // 响应式数据
 const isLoading = ref(false);
@@ -16,6 +28,63 @@ const outlookCalendarLink = ref("");
 // 环境变量
 const isDev = import.meta.env.DEV;
 const useMock = import.meta.env.VITE_USE_MOCK === "true";
+
+// 监听props变化，自动填充数据
+watch(
+  () => props.selectedProduct,
+  (newProduct) => {
+    if (newProduct) {
+      // 自动填充商品信息
+      userQuery.value = `我想购买${newProduct.name}，价格¥${newProduct.price}`;
+      extraShopName.value = newProduct.platform;
+      extraAddress.value = "根据平台定位";
+
+      // 显示提示
+      successMessage.value = "已自动填充商品信息，点击生成日程按钮即可规划";
+      setTimeout(() => {
+        successMessage.value = "";
+      }, 3000);
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.searchQuery,
+  (newQuery) => {
+    if (newQuery && !props.selectedProduct) {
+      userQuery.value = newQuery;
+    }
+  },
+  { immediate: true },
+);
+
+// 根据商品信息生成Mock事件
+const generateMockEventsFromProduct = (product) => {
+  if (!product) return mockEvents;
+
+  const now = new Date();
+  const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+  const threeHoursLater = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  const fourHoursLater = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+
+  return [
+    {
+      title: `AI规划：购买${product.name}`,
+      start: twoHoursLater.toISOString(),
+      end: threeHoursLater.toISOString(),
+      location: product.platform,
+      description: `根据您的需求，AI为您规划了购买${product.name}的时间，价格¥${product.price}`,
+    },
+    {
+      title: "AI规划：相关活动",
+      start: threeHoursLater.toISOString(),
+      end: fourHoursLater.toISOString(),
+      location: "根据情况安排",
+      description: "购买后的相关活动安排",
+    },
+  ];
+};
 
 // Mock数据备用方案
 const mockEvents = [
@@ -34,6 +103,13 @@ const mockEvents = [
     description: "预留购物时间",
   },
 ];
+
+// 计算当前应该使用的事件数据
+const currentMockEvents = computed(() => {
+  return props.selectedProduct
+    ? generateMockEventsFromProduct(props.selectedProduct)
+    : mockEvents;
+});
 
 // ISO时间转数组函数
 function isoToArray(isoString) {
@@ -206,7 +282,7 @@ async function generateSchedule() {
     // 使用组件顶部定义的useMock变量
     if (useMock) {
       console.log("使用Mock数据生成日程");
-      events = mockEvents;
+      events = currentMockEvents.value;
     } else {
       // 调用真实API
       events = await callAIScheduleAPI(query, extraInfo);
