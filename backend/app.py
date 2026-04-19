@@ -5,6 +5,7 @@ from flask import Flask           # Flask 框架核心类
 from config import Config         # 导入配置类
 from flask_cors import CORS       # 跨域资源共享支持
 import logging                    # 日志模块
+from models import db
 
 def create_app():
     """应用工厂函数，创建并配置 Flask 应用实例"""
@@ -19,6 +20,9 @@ def create_app():
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s"
     )
+
+    # 初始化数据库
+    db.init_app(app)
 
     # 导入蓝图对象（每个蓝图已在各自文件中定义了 url_prefix='/api'）
     from api.parse import parse_bp        # 一体化搜索接口
@@ -35,6 +39,10 @@ def create_app():
     app.register_blueprint(adjust_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(plan_bp)
+
+    # 创建表（首次运行）
+    with app.app_context():
+        db.create_all()
 
     @app.route("/test")
     def test():

@@ -1,10 +1,28 @@
-# 配置（DeepSeek /环境)
 import os
 from dotenv import load_dotenv
-load_dotenv()  # 自动读取 .env
+
+# 加载 .env 文件中的环境变量
+load_dotenv()
 
 
 class Config:
+    # Flask 配置
     DEBUG = True
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+
+    # DeepSeek API 配置
     DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
     DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
+
+    # 数据库配置
+    DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_PORT = int(os.getenv("DB_PORT", 3306))
+    DB_USER = os.getenv("DB_USER", "root")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+    DB_NAME = os.getenv("DB_NAME", "ai_life_assistant")
+
+    # SQLAlchemy 数据库连接 URI
+    # 使用SQLite作为临时解决方案，避免MySQL连接问题
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///ai_life_assistant.db")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = os.getenv("SQL_ECHO", "False").lower() == "true"  # 调试时可设为 True

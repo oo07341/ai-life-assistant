@@ -4,3 +4,6 @@ requests==2.31.0
 python-dotenv==1.0.0
 ics==0.7.2
 tatsu==5.10.0  # 与ics 0.7.2兼容的版本
+flask-sqlalchemy==2.5.1
+sqlalchemy==1.4.47
+pymysql==1.1.0
