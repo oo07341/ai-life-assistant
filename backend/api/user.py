@@ -82,9 +82,6 @@ def user_stats():
     # 计算有日历文件的计划数量
     calendar_file_count = sum(1 for plan in plans if plan.get("ics_content"))
     
-    # 获取热门关键词（用于计算总搜索次数）
-    hot_keywords = get_hot_keywords(limit=100)  # 获取所有关键词
-    
     # 从search_history.json读取搜索次数
     import json
     import os
