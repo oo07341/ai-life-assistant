@@ -15,17 +15,26 @@ def create_app():
     CORS(app)
 
     # 配置日志记录，级别为 INFO，便于跟踪请求和错误
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s"
+    )
 
     # 导入蓝图对象（每个蓝图已在各自文件中定义了 url_prefix='/api'）
     from api.parse import parse_bp        # 一体化搜索接口
     from api.prices import price_bp       # 独立价格查询接口（可选）
     from api.schedule import schedule_bp  # 日程生成接口
+    from api.adjust import adjust_bp
+    from api.user import user_bp
+    from api.plan import plan_bp
 
     # 注册蓝图到应用
     app.register_blueprint(parse_bp)
     app.register_blueprint(price_bp)
     app.register_blueprint(schedule_bp)
+    app.register_blueprint(adjust_bp)
+    app.register_blueprint(user_bp)
+    app.register_blueprint(plan_bp)
 
     @app.route("/test")
     def test():
