@@ -21,7 +21,7 @@ MOCK_PRODUCTS = [
         "shop_name": "尊宝比萨(广医店)",
         "item_name": "奥尔良烤鸡披萨 9寸",
         "location": "校外",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 42.0,
         "deeplink": "eleme://shop/20001?goods=001"
     },
@@ -37,7 +37,7 @@ MOCK_PRODUCTS = [
         "shop_name": "必胜客(东城万达店)",
         "item_name": "超级至尊披萨 10寸",
         "location": "校外",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 82.0,
         "deeplink": "eleme://shop/20002?goods=002"
     },
@@ -53,7 +53,7 @@ MOCK_PRODUCTS = [
         "shop_name": "达美乐比萨(莞城店)",
         "item_name": "照烧风味牛肉披萨 9寸",
         "location": "校外",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 62.0,
         "deeplink": "eleme://shop/20003?goods=003"
     },
@@ -103,7 +103,7 @@ MOCK_PRODUCTS = [
         "shop_name": "张亮麻辣烫(广医店)",
         "item_name": "番茄麻辣烫单人餐",
         "location": "校外",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 28.0,
         "deeplink": "eleme://shop/20006?goods=006"
     },
@@ -121,7 +121,7 @@ MOCK_PRODUCTS = [
         "shop_name": "喜茶(广医店)",
         "item_name": "多肉葡萄(首创)",
         "location": "校内",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 20.0,
         "deeplink": "eleme://shop/20007?goods=007"
     },
@@ -129,7 +129,7 @@ MOCK_PRODUCTS = [
         "shop_name": "瑞幸咖啡(广医图书馆店)",
         "item_name": "生椰拿铁",
         "location": "校内",
-        "platform": "美团",
+        "platform": "淘宝闪购",
         "price": 13.5,
         "deeplink": "meituan://waimai/merchant/10008?goods=008"
     },
@@ -137,7 +137,7 @@ MOCK_PRODUCTS = [
         "shop_name": "瑞幸咖啡(广医图书馆店)",
         "item_name": "生椰拿铁",
         "location": "校内",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 14.5,
         "deeplink": "eleme://shop/20008?goods=008"
     },
@@ -153,7 +153,7 @@ MOCK_PRODUCTS = [
         "shop_name": "茶百道(广医后街店)",
         "item_name": "茉莉奶绿",
         "location": "校外",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 12.5,
         "deeplink": "eleme://shop/20009?goods=009"
     },
@@ -171,7 +171,7 @@ MOCK_PRODUCTS = [
         "shop_name": "真功夫(广医店)",
         "item_name": "香菇鸡腿肉饭套餐",
         "location": "校内",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 32.0,
         "deeplink": "eleme://shop/20010?goods=010"
     },
@@ -187,7 +187,7 @@ MOCK_PRODUCTS = [
         "shop_name": "大家乐(东城店)",
         "item_name": "一哥焗猪扒饭",
         "location": "校外",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 48.0,
         "deeplink": "eleme://shop/20011?goods=011"
     },
@@ -205,7 +205,7 @@ MOCK_PRODUCTS = [
         "shop_name": "麦当劳(广医店)",
         "item_name": "麦辣鸡腿堡套餐",
         "location": "校内",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 29.5,
         "deeplink": "eleme://shop/20012?goods=012"
     },
@@ -221,7 +221,7 @@ MOCK_PRODUCTS = [
         "shop_name": "肯德基(东城万达店)",
         "item_name": "吮指原味鸡套餐",
         "location": "校外",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 40.0,
         "deeplink": "eleme://shop/20013?goods=013"
     },
@@ -237,7 +237,7 @@ MOCK_PRODUCTS = [
         "shop_name": "华莱士(广医后街店)",
         "item_name": "香辣鸡腿堡+可乐",
         "location": "校外",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 16.5,
         "deeplink": "eleme://shop/20014?goods=014"
     },

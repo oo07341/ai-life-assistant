@@ -2,9 +2,10 @@
 # 多场景日程生成模块：支持考研、期末考、比赛等目标
 # 输出结构化每日任务列表 + iCalendar 格式日历内容
 
+# services/scheduler.py
 import json
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 try:
     from ics import Calendar, Event
@@ -52,6 +53,9 @@ def _build_ics_content(schedule: List[Dict], goal: str, start_hour: int = 9, dur
     if ICS_AVAILABLE:
         cal = Calendar()
         for day in schedule:
+            # 跳过非日期条目（如建议行）
+            if day.get("date") == "建议":
+                continue
             event = Event()
             event.name = f"{goal} · 学习任务"
             event_start = datetime.strptime(day["date"], "%Y-%m-%d").replace(hour=start_hour, minute=0)
@@ -67,6 +71,8 @@ def _build_ics_content(schedule: List[Dict], goal: str, start_hour: int = 9, dur
             "PRODID:-//AI Life Assistant//Schedule//EN"
         ]
         for day in schedule:
+            if day.get("date") == "建议":
+                continue
             date_str = day["date"].replace("-", "")
             dtstart = f"{date_str}T{start_hour:02d}0000"
             total_minutes = int(duration_hours * 60)
@@ -113,56 +119,60 @@ def generate_schedule(schedule_info: Dict) -> Dict:
 
     total_days = (target_date - start_date).days
     if total_days <= 0:
-        return {"schedule": [], "ics_content": ""}
+        return {"schedule": [], "ics_content": "", "ai_generated": False}
 
-    # 尝试使用AI生成日程
+    # 尝试使用 AI 生成日程
     ai_schedule_result = None
     if DEEPSEEK_AVAILABLE and target_date_str:
         try:
-            print(f"🔍 尝试使用AI生成日程: goal={goal}, target_date={target_date_str}")
+            print("🤖 正在调用 DeepSeek 生成 AI 日程...")
             ai_schedule_result = generate_ai_schedule(
                 goal=goal,
                 target_date=target_date_str,
                 daily_hours=daily_hours,
                 subjects=subjects
             )
-            print(f"🤖 AI日程生成结果: ai_generated={ai_schedule_result.get('ai_generated', False)}")
+            if ai_schedule_result.get("ai_generated"):
+                print("✅ AI 日程生成成功，使用智能规划")
+            else:
+                print("⚠️ AI 返回无效数据，降级到静态规则")
         except Exception as e:
-            print(f"❌ AI日程生成失败: {e}")
+            print(f"❌ AI 日程生成异常: {e}，降级到静态规则")
             ai_schedule_result = None
 
-    # 如果AI生成成功，使用AI结果
-    if ai_schedule_result and ai_schedule_result.get("ai_generated", False):
-        print("🎯 使用AI生成的日程")
+    schedule = []
+    ai_generated = False
+    ai_advice = ""
+
+    # 如果 AI 成功返回，优先使用 AI 的阶段和任务
+    if ai_schedule_result and ai_schedule_result.get("ai_generated"):
+        ai_generated = True
+        ai_advice = ai_schedule_result.get("advice", "")
         phases = ai_schedule_result.get("phases", [])
         daily_tasks = ai_schedule_result.get("daily_tasks", [])
-        advice = ai_schedule_result.get("advice", "")
-        
-        # 将AI结果转换为标准格式
-        schedule = []
+
         current_date = start_date
-        
-        # 如果有AI阶段划分，使用AI的阶段
+
         if phases and len(phases) > 0:
             for phase in phases:
                 phase_name = phase.get("name", "阶段")
                 phase_days = phase.get("days", 0)
                 phase_tasks = phase.get("tasks", [])
-                
-                for day in range(phase_days):
+
+                for day_idx in range(phase_days):
                     if current_date >= target_date:
                         break
-                    
-                    # 使用AI的每日任务或阶段任务
+
                     if daily_tasks and len(daily_tasks) > 0:
                         task_index = len(schedule) % len(daily_tasks)
                         tasks = daily_tasks[task_index]
                     elif phase_tasks and len(phase_tasks) > 0:
-                        task_index = day % len(phase_tasks)
+                        task_index = day_idx % len(phase_tasks)
                         tasks = [phase_tasks[task_index]]
                     else:
-                        tasks = [f"{phase_name}：复习 {daily_hours:.1f}h"]
-                    
+                        hours_per_subject = daily_hours / len(subjects)
+                        tasks = [f"{phase_name}：{subj} {hours_per_subject:.1f}h" for subj in subjects]
+
                     schedule.append({
                         "date": current_date.strftime("%Y-%m-%d"),
                         "tasks": tasks if isinstance(tasks, list) else [tasks],
@@ -170,9 +180,14 @@ def generate_schedule(schedule_info: Dict) -> Dict:
                         "phase": phase_name
                     })
                     current_date += timedelta(days=1)
+
+                if current_date >= target_date:
+                    break
         else:
-            # 如果没有AI阶段，使用静态规则
+            # AI 没有返回阶段，降级到静态规则
+            ai_generated = False
             phases = _get_phase_distribution(goal)
+            current_date = start_date
             for phase_name, ratio in phases:
                 phase_days = max(1, int(total_days * ratio))
                 phase_days = min(phase_days, (target_date - current_date).days)
@@ -180,41 +195,32 @@ def generate_schedule(schedule_info: Dict) -> Dict:
                 for _ in range(phase_days):
                     if current_date >= target_date:
                         break
-                    
-                    # 使用AI的每日任务
-                    if daily_tasks and len(daily_tasks) > 0:
-                        task_index = len(schedule) % len(daily_tasks)
-                        tasks = daily_tasks[task_index]
-                    else:
-                        hours_per_subject = daily_hours / len(subjects)
-                        tasks = [
-                            f"{phase_name}：{subj} {hours_per_subject:.1f}h"
-                            for subj in subjects
-                        ]
-                    
+                    hours_per_subject = daily_hours / len(subjects)
+                    tasks = [f"{phase_name}：{subj} {hours_per_subject:.1f}h" for subj in subjects]
                     schedule.append({
                         "date": current_date.strftime("%Y-%m-%d"),
-                        "tasks": tasks if isinstance(tasks, list) else [tasks],
-                        "ai_generated": True,
+                        "tasks": tasks,
+                        "ai_generated": False,
                         "phase": phase_name
                     })
                     current_date += timedelta(days=1)
-        
-        # 添加AI建议
-        if advice:
+
+                if current_date >= target_date:
+                    break
+
+        # 如果有 AI 建议，将其作为单独条目加入（前端可展示但不影响日历）
+        if ai_advice:
             schedule.append({
                 "date": "建议",
-                "tasks": [f"AI建议：{advice}"],
+                "tasks": [f"💡 AI建议：{ai_advice}"],
                 "ai_generated": True,
                 "phase": "建议"
             })
     else:
-        # AI生成失败，使用静态规则
-        print("🔧 AI生成失败，使用静态规则")
+        # 未使用 AI，采用静态规则
+        print("🔧 使用静态规则生成日程")
         phases = _get_phase_distribution(goal)
-        schedule = []
         current_date = start_date
-
         for phase_name, ratio in phases:
             phase_days = max(1, int(total_days * ratio))
             phase_days = min(phase_days, (target_date - current_date).days)
@@ -222,16 +228,8 @@ def generate_schedule(schedule_info: Dict) -> Dict:
             for _ in range(phase_days):
                 if current_date >= target_date:
                     break
-                remaining = (target_date - current_date).days
-                if remaining <= 0:
-                    break
-
                 hours_per_subject = daily_hours / len(subjects)
-                tasks = [
-                    f"{phase_name}：{subj} {hours_per_subject:.1f}h"
-                    for subj in subjects
-                ]
-
+                tasks = [f"{phase_name}：{subj} {hours_per_subject:.1f}h" for subj in subjects]
                 schedule.append({
                     "date": current_date.strftime("%Y-%m-%d"),
                     "tasks": tasks,
@@ -244,20 +242,17 @@ def generate_schedule(schedule_info: Dict) -> Dict:
                 break
 
     ics_content = _build_ics_content(schedule, goal, preferred_start_hour, calendar_duration)
-    
-    # 返回结果，包含AI生成标识
+
     result = {
         "schedule": schedule,
         "ics_content": ics_content,
-        "ai_generated": ai_schedule_result.get("ai_generated", False) if ai_schedule_result else False,
+        "ai_generated": ai_generated,
         "total_days": total_days,
         "total_hours": total_days * daily_hours
     }
-    
-    # 如果有AI建议，添加到结果中
-    if ai_schedule_result and ai_schedule_result.get("advice"):
-        result["ai_advice"] = ai_schedule_result["advice"]
-    
+    if ai_advice:
+        result["ai_advice"] = ai_advice
+
     return result
 
 
@@ -272,12 +267,14 @@ def adjust_schedule(original_schedule: List[Dict],
 
     incomplete_days = []
     for day in original_schedule:
+        if day.get("date") == "建议":  # 跳过建议条目
+            continue
         day_date = datetime.strptime(day["date"], "%Y-%m-%d").date()
         if (day_date > today) or (day_date == today and day["date"] not in completed_set):
             incomplete_days.append(day["date"])
 
     if len(incomplete_days) == 0:
-        return {"schedule": [], "ics_content": ""}
+        return {"schedule": [], "ics_content": "", "ai_generated": False}
 
     target_date = _parse_date(target_date_str)
     start_date = datetime.combine(today, datetime.min.time())
@@ -292,8 +289,6 @@ def adjust_schedule(original_schedule: List[Dict],
     }
     return generate_schedule(new_info)
 
-
-from typing import Optional
 
 def generate_schedule_event(item: Optional[str] = None, preferred_time: Optional[str] = None) -> dict:
     item_str = (item or "未指定商品").strip()
@@ -323,7 +318,7 @@ def generate_schedule_event(item: Optional[str] = None, preferred_time: Optional
 
     return {
         "title": f"购买 {item_str}",
-        "description": f"AI 一点外卖推荐：{item_str}。建议 {start_time.strftime('%Y-%m-%d %H:%M')} 出发",
+        "description": f"AI 智能比价推荐：{item_str}。建议 {start_time.strftime('%Y-%m-%d %H:%M')} 出发",
         "location": "线上/附近门店",
         "start": format_time(start_time),
         "end": format_time(end_time),
