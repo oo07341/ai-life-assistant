@@ -293,7 +293,9 @@ def adjust_schedule(original_schedule: List[Dict],
     return generate_schedule(new_info)
 
 
-def generate_schedule_event(item: str = None, preferred_time: str = None) -> dict:
+from typing import Optional
+
+def generate_schedule_event(item: Optional[str] = None, preferred_time: Optional[str] = None) -> dict:
     item_str = (item or "未指定商品").strip()
     preferred_time_str = (preferred_time or "").strip()
     time_intent = preferred_time_str.lower() if preferred_time_str else ""

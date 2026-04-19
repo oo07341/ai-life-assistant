@@ -131,7 +131,9 @@ def parse_intent(query: str) -> dict:
         return default_response
 
 
-def generate_ai_schedule(goal: str, target_date: str, daily_hours: float = 4.0, subjects: list = None) -> dict:
+from typing import List, Optional
+
+def generate_ai_schedule(goal: str, target_date: str, daily_hours: float = 4.0, subjects: Optional[List[str]] = None) -> dict:
     """
     调用 DeepSeek API 生成个性化学习计划
     返回标准结构，永不抛异常

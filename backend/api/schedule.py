@@ -89,7 +89,8 @@ def schedule():
         if not item:
             return error("item is required")
 
-        event = generate_schedule_event(item, preferred_time)
+        # 确保item不为None，preferred_time可能为None
+        event = generate_schedule_event(str(item), str(preferred_time) if preferred_time else None)
         return success({"event": event})
 
     else:
