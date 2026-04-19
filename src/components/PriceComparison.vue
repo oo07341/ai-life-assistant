@@ -222,6 +222,7 @@ import {
   InfoFilled,
 } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
+import { analyzeIntent, searchProducts } from "@/services/api.js";
 
 // 响应式数据
 const searchQuery = ref("");
@@ -232,74 +233,8 @@ const intentResult = ref(null);
 const selectedPlatform = ref("");
 const sortBy = ref("price-asc");
 
-// 模拟数据
-const products = ref([
-  {
-    id: 1,
-    name: "必胜客超级至尊披萨",
-    platform: "美团",
-    price: 89.9,
-    originalPrice: 109.9,
-    discount: 8.2,
-    shopName: "必胜客中关村店",
-    rating: 4.8,
-    deliveryTime: "30分钟",
-    description: "12寸超级至尊披萨，适合3-4人分享，含芝士加倍",
-    isBestValue: true,
-  },
-  {
-    id: 2,
-    name: "必胜客超级至尊披萨",
-    platform: "饿了么",
-    price: 85.9,
-    originalPrice: 109.9,
-    discount: 7.8,
-    shopName: "必胜客中关村店",
-    rating: 4.7,
-    deliveryTime: "35分钟",
-    description: "12寸超级至尊披萨，满减优惠，配送费减免",
-    isBestValue: false,
-  },
-  {
-    id: 3,
-    name: "达美乐经典披萨",
-    platform: "达美乐APP",
-    price: 79.9,
-    originalPrice: 99.9,
-    discount: 8.0,
-    shopName: "达美乐披萨",
-    rating: 4.9,
-    deliveryTime: "30分钟",
-    description: "经典口味披萨，30分钟送达保证，热销产品",
-    isBestValue: false,
-  },
-  {
-    id: 4,
-    name: "棒约翰特色披萨",
-    platform: "美团",
-    price: 92.9,
-    originalPrice: 119.9,
-    discount: 7.7,
-    shopName: "棒约翰披萨",
-    rating: 4.6,
-    deliveryTime: "40分钟",
-    description: "特色风味披萨，使用进口奶酪，口感浓郁",
-    isBestValue: false,
-  },
-  {
-    id: 5,
-    name: "尊宝披萨套餐",
-    platform: "饿了么",
-    price: 75.9,
-    originalPrice: 95.9,
-    discount: 7.9,
-    shopName: "尊宝披萨",
-    rating: 4.5,
-    deliveryTime: "45分钟",
-    description: "披萨+小吃+饮料套餐，性价比高",
-    isBestValue: false,
-  },
-]);
+// 初始为空数组，等待用户搜索
+const products = ref([]);
 
 // 计算属性
 const platforms = computed(() => {
@@ -343,44 +278,27 @@ const handleSearch = async () => {
   showAIAnalysis.value = true;
 
   try {
-    // 调用真实AI分析API
-    const apiBaseUrl =
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
-    const response = await fetch(`${apiBaseUrl}/api/analyze-intent`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: searchQuery.value,
-      }),
-    });
+    // 使用新的API服务进行意图分析
+    const result = await analyzeIntent(searchQuery.value);
 
-    if (!response.ok) {
-      throw new Error(`API请求失败: ${response.status}`);
-    }
+    // 解析后端返回的数据格式
+    intentResult.value = {
+      query: searchQuery.value,
+      intent: result.intent?.intent || "general",
+      keywords: result.intent?.product_keywords || [searchQuery.value],
+      platforms: ["美团", "饿了么", "京东", "淘宝"], // 从API返回的数据中提取或使用默认
+      advice: "根据您的需求，AI为您推荐以下商品",
+      source: "api",
+    };
 
-    const data = await response.json();
-
-    if (data.success) {
-      intentResult.value = {
-        query: data.query,
-        intent: data.intent,
-        keywords: data.keywords,
-        platforms: data.platforms,
-        advice: data.advice,
-        source: data.source || "mock_data",
-      };
-
-      // 根据AI分析结果搜索商品
-      await searchProducts(data.keywords[0] || searchQuery.value);
-
-      ElMessage.success(
-        `AI分析完成 (${data.source === "deepseek_ai" ? "DeepSeek AI" : "Mock数据"})`,
-      );
+    // 根据AI分析结果搜索商品
+    if (result.intent?.product_keywords?.length > 0) {
+      await searchProductsAPI(result.intent.product_keywords[0]);
     } else {
-      throw new Error(data.error || "AI分析失败");
+      await searchProductsAPI(searchQuery.value);
     }
+
+    ElMessage.success("AI分析完成");
   } catch (error) {
     console.error("AI分析错误:", error);
 
@@ -395,7 +313,7 @@ const handleSearch = async () => {
     };
 
     // 使用模拟数据
-    await searchProducts(searchQuery.value);
+    await searchProductsAPI(searchQuery.value);
 
     ElMessage.warning("AI分析失败，使用备用方案");
   } finally {
@@ -404,8 +322,43 @@ const handleSearch = async () => {
   }
 };
 
-// 搜索商品
-const searchProducts = async (keyword) => {
+// 使用API服务搜索商品
+const searchProductsAPI = async (keyword) => {
+  try {
+    const result = await searchProducts(keyword);
+
+    // 转换API返回的商品格式为组件需要的格式
+    if (result && result.length > 0) {
+      products.value = result.map((product, index) => ({
+        id: product.id || index + 1,
+        name: product.name || `商品${index + 1}`,
+        platform: product.platform || "未知平台",
+        price: product.price || 0,
+        originalPrice: product.originalPrice || product.price * 1.2,
+        discount: product.originalPrice
+          ? Math.round((1 - product.price / product.originalPrice) * 100)
+          : 20,
+        shopName: product.shopName || `${product.platform || "未知"}官方店`,
+        rating: product.rating || 4.5,
+        deliveryTime: product.deliveryTime || "1-3天",
+        description:
+          product.description ||
+          `来自${product.platform || "未知平台"}的${product.name || "商品"}`,
+        isBestValue: index === 0, // 第一个商品作为最佳推荐
+      }));
+    } else {
+      // 如果没有搜索结果，使用模拟数据
+      useMockProducts(keyword);
+    }
+  } catch (error) {
+    console.error("商品搜索错误:", error);
+    // 降级到模拟数据
+    useMockProducts(keyword);
+  }
+};
+
+// 保留原有的searchProducts函数作为兼容（重命名）
+const searchProductsOld = async (keyword) => {
   try {
     const apiBaseUrl =
       import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
@@ -538,9 +491,10 @@ const resetFilters = () => {
   sortBy.value = "price-asc";
 };
 
-// 初始化时自动搜索示例
+// 初始化时设置示例提示（不自动搜索）
 onMounted(() => {
-  searchQuery.value = "我想吃披萨";
+  // 清空搜索框，让用户输入自己的需求
+  searchQuery.value = "";
 });
 </script>
 

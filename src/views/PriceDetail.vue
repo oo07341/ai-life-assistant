@@ -47,6 +47,10 @@
 import { ref, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import { ShoppingCart } from "@element-plus/icons-vue";
+import {
+  analyzeIntent as apiAnalyzeIntent,
+  searchProducts,
+} from "@/services/api.js";
 import PriceInput from "@/components/price/PriceInput.vue";
 import PriceResults from "@/components/price/PriceResults.vue";
 import PriceHistory from "@/components/price/PriceHistory.vue";
@@ -67,54 +71,137 @@ const analyzeIntent = async () => {
 
   isAnalyzing.value = true;
   try {
-    // 模拟API调用
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // 调用AI接口分析意图
+    const useAI = import.meta.env.VITE_USE_AI === "true";
 
-    // 模拟分析结果
+    let intentResult = null;
+    let intent = "通用购物";
+    let category = "商品";
+    let keywords = [searchQuery.value];
+    let confidence = 0.85 + Math.random() * 0.1;
+
+    if (useAI) {
+      console.log("🔍 启用AI分析，调用统一的API服务...");
+      try {
+        // 使用统一的API服务层调用AI分析
+        intentResult = await apiAnalyzeIntent(searchQuery.value);
+        console.log("🤖 AI分析结果:", intentResult);
+
+        // 解析AI返回的意图
+        if (intentResult.intent) {
+          const aiIntent = intentResult.intent.intent || intentResult.intent;
+          console.log("🎯 AI意图:", aiIntent);
+          console.log("📋 商品关键词:", intentResult.intent.product_keywords);
+
+          // 根据AI意图设置参数
+          if (aiIntent === "shopping" || aiIntent === "购物") {
+            intent = "智能购物";
+            category = "商品";
+          } else if (aiIntent === "schedule" || aiIntent === "日程") {
+            intent = "学习规划";
+            category = "教育";
+          } else if (aiIntent === "餐饮" || aiIntent === "饮食") {
+            intent = "餐饮安排";
+            category = "食品";
+          }
+
+          // 使用AI返回的关键词
+          if (
+            intentResult.intent.product_keywords &&
+            intentResult.intent.product_keywords.length > 0
+          ) {
+            keywords = intentResult.intent.product_keywords;
+          }
+
+          confidence = 0.92; // AI分析的置信度更高
+        }
+      } catch (error) {
+        console.error("❌ AI分析失败，使用备用方案:", error);
+        // AI分析失败时使用备用方案
+      }
+    } else {
+      console.log("🔧 AI分析未启用 (VITE_USE_AI=false)");
+    }
+
+    // 如果AI分析失败或未启用AI，使用增强的关键词匹配
+    if (!intentResult) {
+      const query = searchQuery.value.toLowerCase();
+
+      if (query.includes("披萨") || query.includes("pizza")) {
+        intent = "购买披萨";
+        category = "食品";
+        keywords = ["披萨", "外卖", "晚餐"];
+      } else if (query.includes("汉堡") || query.includes("hamburger")) {
+        intent = "购买汉堡";
+        category = "快餐";
+        keywords = ["汉堡", "快餐", "外卖"];
+      } else if (
+        query.includes("奶茶") ||
+        query.includes("茶") ||
+        query.includes("饮料")
+      ) {
+        intent = "购买饮品";
+        category = "饮品";
+        keywords = ["奶茶", "饮料", "饮品"];
+      } else if (
+        query.includes("学习") ||
+        query.includes("复习") ||
+        query.includes("考试")
+      ) {
+        intent = "学习规划";
+        category = "教育";
+        keywords = ["学习", "复习", "计划"];
+      }
+    }
+
     analysisResult.value = {
-      intent: "购买披萨",
-      category: "食品",
-      budget: "50-100元",
-      time_preference: "晚餐时间",
-      location_preference: "附近3公里内",
+      intent: intent,
+      category: category,
+      keywords: keywords,
+      confidence: confidence,
+      advice: "根据您的需求，AI为您推荐以下商品",
     };
 
-    // 模拟比价结果
-    priceResults.value = [
-      {
-        id: 1,
-        platform: "必胜客",
-        name: "超级至尊披萨",
-        price: 89,
-        original_price: 99,
-        discount: "9折",
-        delivery_time: "30-45分钟",
-        rating: 4.8,
-        features: ["热销", "免配送费", "30分钟必达"],
-      },
-      {
-        id: 2,
-        platform: "达美乐",
-        name: "经典意式披萨",
-        price: 79,
-        original_price: 89,
-        discount: "8.8折",
-        delivery_time: "25-40分钟",
-        rating: 4.7,
-        features: ["新品", "买一送一", "免配送费"],
-      },
-      {
-        id: 3,
-        platform: "棒约翰",
-        name: "豪华海鲜披萨",
-        price: 99,
-        original_price: 119,
-        discount: "8.3折",
-        delivery_time: "35-50分钟",
-        rating: 4.6,
-        features: ["招牌", "海鲜特供", "会员专享"],
-      },
-    ];
+    // 调用价格搜索API获取真实的mock数据
+    try {
+      console.log("🔍 调用价格搜索API...");
+      // 使用第一个关键词进行搜索
+      const searchKeyword =
+        keywords.length > 0 ? keywords[0] : searchQuery.value;
+      const searchResults = await searchProducts(searchKeyword);
+      console.log("💰 价格搜索结果:", searchResults);
+
+      if (searchResults && searchResults.length > 0) {
+        // 使用API返回的真实mock数据
+        priceResults.value = searchResults.map((product, index) => ({
+          id: index + 1,
+          platform: product.platform,
+          name:
+            product.item_name ||
+            product.name ||
+            `${searchKeyword} ${product.platform}专享`,
+          price: product.price,
+          original_price: Math.round(
+            product.price * (1.1 + Math.random() * 0.1),
+          ), // 原价比现价高10-20%
+          discount: `${Math.round((1 - product.price / (product.price * 1.15)) * 100)}折`,
+          delivery_time: product.delivery_time || "30-45分钟",
+          rating: 4.5 + Math.random() * 0.3 - 0.15, // 4.35-4.65的评分
+          features: product.features || ["热销", "优质"],
+        }));
+      } else {
+        // 如果API没有返回数据，使用模拟数据
+        console.log("⚠️ API未返回数据，使用模拟数据");
+        priceResults.value = generateMockPriceResults(
+          intent,
+          searchQuery.value,
+        );
+      }
+    } catch (error) {
+      console.error("❌ 价格搜索失败，使用模拟数据:", error);
+      // 价格搜索失败时使用模拟数据
+      priceResults.value = generateMockPriceResults(intent, searchQuery.value);
+    }
 
     // 添加到历史记录
     addToHistory();
@@ -173,6 +260,63 @@ const clearHistory = () => {
 const generateSchedule = (product) => {
   ElMessage.info(`正在为${product.name}生成日程...`);
   // 这里可以跳转到日程页面或打开日程生成对话框
+};
+
+// 生成模拟价格结果
+const generateMockPriceResults = (intent, query) => {
+  const baseProducts = [
+    {
+      platform: "美团",
+      basePrice: 50,
+      deliveryTime: "30-45分钟",
+      rating: 4.5,
+      features: ["热销", "免配送费"],
+    },
+    {
+      platform: "饿了么",
+      basePrice: 55,
+      deliveryTime: "25-40分钟",
+      rating: 4.6,
+      features: ["新品", "优惠券"],
+    },
+    {
+      platform: "京东",
+      basePrice: 60,
+      deliveryTime: "次日达",
+      rating: 4.7,
+      features: ["正品保证", "快速配送"],
+    },
+  ];
+
+  return baseProducts.map((base, index) => {
+    const priceVariation = Math.random() * 20 - 10; // -10到+10的价格变化
+    const price = Math.round(base.basePrice + priceVariation);
+    const originalPrice = Math.round(price * (1.1 + Math.random() * 0.1)); // 原价比现价高10-20%
+    const discount = Math.round((1 - price / originalPrice) * 100);
+
+    let productName = `${query} ${base.platform}专享`;
+    if (intent === "购买披萨") {
+      productName = ["超级至尊披萨", "经典意式披萨", "豪华海鲜披萨"][index % 3];
+    } else if (intent === "购买汉堡") {
+      productName = ["经典牛肉汉堡", "鸡肉汉堡套餐", "豪华双层汉堡"][index % 3];
+    } else if (intent === "购买饮品") {
+      productName = ["招牌奶茶", "果茶特饮", "咖啡拿铁"][index % 3];
+    } else if (intent === "学习规划") {
+      productName = ["学习资料", "参考书籍", "文具套装"][index % 3];
+    }
+
+    return {
+      id: index + 1,
+      platform: base.platform,
+      name: productName,
+      price: price,
+      original_price: originalPrice,
+      discount: `${discount}折`,
+      delivery_time: base.deliveryTime,
+      rating: base.rating + Math.random() * 0.3 - 0.15, // 轻微评分变化
+      features: base.features,
+    };
+  });
 };
 
 // 初始化

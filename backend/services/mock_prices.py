@@ -71,7 +71,7 @@ MOCK_PRODUCTS = [
         "shop_name": "广医二饭麻辣香锅",
         "item_name": "自选麻辣烫单人套餐",
         "location": "校内",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 19.5,
         "deeplink": "eleme://shop/20004?goods=004"
     },
@@ -87,7 +87,7 @@ MOCK_PRODUCTS = [
         "shop_name": "杨国福麻辣烫(广医后街店)",
         "item_name": "招牌骨汤麻辣烫",
         "location": "校外",
-        "platform": "饿了么",
+        "platform": "淘宝闪购",
         "price": 27.5,
         "deeplink": "eleme://shop/20005?goods=005"
     },

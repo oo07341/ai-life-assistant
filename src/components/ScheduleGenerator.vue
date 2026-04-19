@@ -18,8 +18,8 @@ const props = defineProps({
 const isLoading = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
-const userQuery = ref("我想吃披萨，选了必胜客超级至尊披萨");
-const extraTimeLocation = ref("明天下午3点，中关村");
+const userQuery = ref("");
+const extraTimeLocation = ref("");
 const showCalendarOptions = ref(false);
 const googleCalendarLink = ref("");
 const outlookCalendarLink = ref("");
@@ -229,7 +229,7 @@ async function tryAddToWebCalendar(events) {
 // 调用后端API
 async function callAIScheduleAPI(query, extraInfo = {}) {
   const requestBody = {
-    query: query || "我想吃披萨",
+    query: query || "用户日程规划需求",
     context_time: new Date().toISOString(),
     extra_info: extraInfo,
   };
@@ -275,7 +275,7 @@ async function generateSchedule() {
 
   try {
     // 收集页面上下文信息 - 使用用户输入的值
-    const query = userQuery.value || "我想吃披萨";
+    const query = userQuery.value || "用户日程规划需求";
     const extraInfo = {
       time_location: extraTimeLocation.value || "",
     };

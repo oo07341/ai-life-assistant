@@ -24,9 +24,9 @@ def create_app():
     from api.parse import parse_bp        # 一体化搜索接口
     from api.prices import price_bp       # 独立价格查询接口（可选）
     from api.schedule import schedule_bp  # 日程生成接口
-    from api.adjust import adjust_bp
+    from api.adjust import adjust_bp      # 日程调整接口
     from api.user import user_bp
-    from api.plan import plan_bp
+    from api.plan import plan_bp          # 计划管理接口
 
     # 注册蓝图到应用
     app.register_blueprint(parse_bp)
@@ -51,4 +51,4 @@ def create_app():
 # 当直接运行此文件时（而非被导入），启动开发服务器
 if __name__ == "__main__":
     app = create_app()          # 创建应用实例
-    app.run(host="127.0.0.1", port=5000, debug=True)         # 启动 Flask 开发服务器，debug=True 开启热重载和调试模式
+    app.run(host="127.0.0.1", port=3001, debug=True)         # 启动 Flask 开发服务器，端口改为3001以匹配前端配置
