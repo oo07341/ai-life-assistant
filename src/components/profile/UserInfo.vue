@@ -21,15 +21,15 @@
 
       <div class="user-stats">
         <div class="stat-item">
-          <div class="stat-value">12</div>
+          <div class="stat-value">{{ stats.priceComparisonCount || 0 }}</div>
           <div class="stat-label">比价次数</div>
         </div>
         <div class="stat-item">
-          <div class="stat-value">8</div>
+          <div class="stat-value">{{ stats.futureScheduleCount || 0 }}</div>
           <div class="stat-label">未来日程</div>
         </div>
         <div class="stat-item">
-          <div class="stat-value">5</div>
+          <div class="stat-value">{{ stats.calendarFileCount || 0 }}</div>
           <div class="stat-label">日历文件</div>
         </div>
       </div>
@@ -39,6 +39,56 @@
 
 <script setup>
 import { UserFilled } from "@element-plus/icons-vue";
+import { ref, onMounted } from "vue";
+import { userAPI, planAPI } from "@/services/api.js";
+
+const stats = ref({
+  priceComparisonCount: 0,
+  futureScheduleCount: 0,
+  calendarFileCount: 0,
+});
+
+// 模拟用户ID（实际项目中应从登录状态获取）
+const mockUserId = "test-user-123";
+
+async function loadUserStats() {
+  try {
+    // 使用新的stats接口获取统计数据
+    const statsData = await userAPI.getStats();
+
+    stats.value = {
+      priceComparisonCount: statsData.price_comparison_count || 0,
+      futureScheduleCount: statsData.future_schedule_count || 0,
+      calendarFileCount: statsData.calendar_file_count || 0,
+    };
+  } catch (error) {
+    console.error("加载用户统计信息失败:", error);
+    // 如果新接口失败，回退到旧方法
+    try {
+      const profile = await userAPI.getProfile();
+      const plans = await planAPI.getPlans();
+      const calendarFileCount = plans.filter((plan) => plan.ics_content).length;
+
+      stats.value = {
+        priceComparisonCount: 12, // 临时模拟数据
+        futureScheduleCount: profile.plan_count || plans.length || 0,
+        calendarFileCount: calendarFileCount,
+      };
+    } catch (fallbackError) {
+      console.error("回退方法也失败:", fallbackError);
+      // 使用默认值
+      stats.value = {
+        priceComparisonCount: 0,
+        futureScheduleCount: 0,
+        calendarFileCount: 0,
+      };
+    }
+  }
+}
+
+onMounted(() => {
+  loadUserStats();
+});
 </script>
 
 <style scoped>

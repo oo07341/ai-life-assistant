@@ -112,6 +112,9 @@ export const userAPI = {
 
   // 获取用户历史
   getHistory: () => request("/api/user/history"),
+
+  // 获取用户统计数据
+  getStats: () => request("/api/user/stats"),
 };
 
 /**
