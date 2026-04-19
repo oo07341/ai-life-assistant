@@ -12,7 +12,7 @@
         v-model="searchQueryModel"
         type="textarea"
         :rows="3"
-        placeholder="请输入您的需求，例如：我想吃披萨、我想买手机、我需要纸巾等"
+        placeholder="请输入您的需求，例如：我想吃披萨、我想吃辣的、我想吃便宜的..."
         resize="none"
         class="query-input"
       />
