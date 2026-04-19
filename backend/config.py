@@ -1,3 +1,4 @@
+# config.py
 import os
 from dotenv import load_dotenv
 
@@ -22,7 +23,9 @@ class Config:
     DB_NAME = os.getenv("DB_NAME", "ai_life_assistant")
 
     # SQLAlchemy 数据库连接 URI
-    # 使用SQLite作为临时解决方案，避免MySQL连接问题
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///ai_life_assistant.db")
+    SQLALCHEMY_DATABASE_URI = (
+        f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        "?charset=utf8mb4"
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = os.getenv("SQL_ECHO", "False").lower() == "true"  # 调试时可设为 True

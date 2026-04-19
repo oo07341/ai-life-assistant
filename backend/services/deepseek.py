@@ -1,17 +1,12 @@
 # 意图解析
 # DeepSeek封装
+# services/deepseek.py
 import json
 import requests
 from config import Config
 
-
 def parse_intent(query: str) -> dict:
-    """
-    调用 DeepSeek API 解析用户意图
-    返回标准结构，永不抛异常
-    """
-
-    # 默认返回值，防止任何异常导致接口崩溃
+    """调用 DeepSeek API 解析用户意图（保持不变）"""
     default_response = {
         "intent": "general",
         "product_keywords": [],
@@ -24,17 +19,14 @@ def parse_intent(query: str) -> dict:
         }
     }
 
-    # 1. 基础校验
     if not query or not isinstance(query, str):
         return default_response
 
-    # 构造请求头
     headers = {
         "Authorization": f"Bearer {Config.DEEPSEEK_API_KEY}",
         "Content-Type": "application/json"
     }
 
-    # 构造请求体
     payload = {
         "model": "deepseek-chat",
         "messages": [
@@ -59,213 +51,137 @@ def parse_intent(query: str) -> dict:
                 "content": query
             }
         ],
-        "temperature": 0.1,   # 保证输出稳定、结构化
-        "max_tokens": 400  # 限制返回的最大 token 数，避免过长回复
+        "temperature": 0.1,
+        "max_tokens": 400
     }
 
     try:
-        # 2. 请求 DeepSeek
-        resp = requests.post(
-            Config.DEEPSEEK_API_URL,
-            headers=headers,
-            json=payload,
-            timeout=10  # 防止请求卡死
-        )
-        resp.raise_for_status()  # HTTP 错误直接抛异常
-
-        # 安全提取返回内容
-        content = resp.json() \
-                      .get("choices", [{}])[0] \
-                      .get("message", {}) \
-                      .get("content", "")
-
-        # 3. 防御：空字符串直接返回默认值
-        content = content.strip()
+        resp = requests.post(Config.DEEPSEEK_API_URL, headers=headers, json=payload, timeout=10)
+        resp.raise_for_status()
+        content = resp.json()["choices"][0]["message"]["content"].strip()
         if not content:
             return default_response
 
-        # 4. 容错解析 JSON
+        # 解析 JSON
         try:
             result = json.loads(content)
         except json.JSONDecodeError:
-            # 尝试去掉 ```json ``` 这种包裹
             content = content.replace("```json", "").replace("```", "").strip()
             result = json.loads(content)
 
-        # 5. 字段兜底（防止缺字段报错）
+        # 补全字段
         result.setdefault("intent", "general")
         result.setdefault("product_keywords", [])
         result.setdefault("location_hint", "不限")
 
-        # 如果意图是日程，确保 schedule_info 存在且结构完整
         if result.get("intent") == "schedule":
             schedule_info = result.get("schedule_info")
             if not isinstance(schedule_info, dict):
                 schedule_info = {}
-            # 补全 schedule_info 子字段
             schedule_info.setdefault("goal", "期末考")
             schedule_info.setdefault("target_date", None)
             schedule_info.setdefault("daily_hours", 4)
             schedule_info.setdefault("subjects", ["复习"])
             result["schedule_info"] = schedule_info
         else:
-            # 非日程意图，依然提供空对象避免前端 undefined
             result["schedule_info"] = None
 
         return result
 
-    except requests.RequestException as e:
-        # 兼容非 Flask 环境：尝试用 current_app.logger，失败则用 print
-        try:
-            from flask import current_app
-            current_app.logger.error(f"DeepSeek API error: {e}")
-        except (RuntimeError, ImportError):
-            print(f"[ERROR] DeepSeek API error: {e}")
-        return default_response
     except Exception as e:
-        try:
-            from flask import current_app
-            current_app.logger.error(f"Unexpected error: {e}")
-        except (RuntimeError, ImportError):
-            print(f"[ERROR] Unexpected error: {e}")
+        print(f"[ERROR] parse_intent failed: {e}")
         return default_response
 
 
-from typing import List, Optional
-
-def generate_ai_schedule(goal: str, target_date: str, daily_hours: float = 4.0, subjects: Optional[List[str]] = None) -> dict:
+def generate_ai_schedule(goal: str, target_date: str, daily_hours: float = 4.0, subjects: list = None) -> dict:
     """
     调用 DeepSeek API 生成个性化学习计划
-    返回标准结构，永不抛异常
+    返回包含 AI 生成阶段和任务的结构，失败时返回 ai_generated=False
     """
     if subjects is None:
         subjects = []
-    else:
-        subjects = subjects if isinstance(subjects, list) else []
 
-    # 默认返回值，防止任何异常导致接口崩溃
     default_response = {
         "ai_generated": False,
         "phases": [],
         "daily_tasks": [],
-        "advice": "使用静态规则生成日程",
+        "advice": "",
         "total_days": 30,
         "total_hours": 120
     }
 
-    # 1. 基础校验
     if not goal or not target_date:
+        print("⚠️ AI 日程缺少 goal 或 target_date，跳过调用")
         return default_response
 
-    # 构造请求头
+    # 检查 API Key 是否存在
+    if not Config.DEEPSEEK_API_KEY:
+        print("❌ DEEPSEEK_API_KEY 未配置，无法调用 AI")
+        return default_response
+
     headers = {
         "Authorization": f"Bearer {Config.DEEPSEEK_API_KEY}",
         "Content-Type": "application/json"
     }
 
-    # 构造请求体 - 详细的未来日程提示词
     subjects_text = "、".join(subjects) if subjects else "相关科目"
     prompt = f"""
-    你是一个专业的学业规划师。请为以下学习目标生成详细的学习计划：
+你是一位专业的学业规划师。请根据以下信息为用户生成一个详细的备考计划建议。
 
-    目标：{goal}
-    截止日期：{target_date}
-    每日可用时间：{daily_hours}小时
-    学习科目：{subjects_text}
+用户目标：{goal}
+考试/截止日期：{target_date}
+每日可用学习时间：{daily_hours} 小时
+需要准备的科目/任务：{subjects_text}
 
-    请生成一个详细的学习计划，包含以下内容：
-    1. 学习阶段划分（如基础阶段、强化阶段、冲刺阶段）
-    2. 每个阶段的时间分配（天数）
-    3. 每日具体学习任务安排
-    4. 学习建议和注意事项
+请以严格的 JSON 格式返回，包含以下字段：
+- phases: 数组，每个元素包含 name (阶段名称)、days (该阶段天数)、tasks (该阶段典型每日任务列表，字符串数组)
+- daily_tasks: 数组，示例的每日任务模板（可用于每日具体安排）
+- advice: 字符串，给用户的个性化学习建议（如时间分配、复习技巧等）
+- total_days: 整数，总学习天数
+- total_hours: 整数，总学习小时数
 
-    请以严格的JSON格式返回，包含以下字段：
-    - phases: 数组，每个元素包含阶段名称、天数、重点任务
-    - daily_tasks: 数组，示例的每日任务安排
-    - advice: 字符串，学习建议
-    - total_days: 整数，总学习天数
-    - total_hours: 整数，总学习小时数
-    """
+只返回 JSON，不要其他文字。
+"""
 
     payload = {
         "model": "deepseek-chat",
         "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "你是一个专业的学业规划师，擅长制定详细的学习计划。"
-                    "请根据用户提供的学习目标、截止日期、每日可用时间和学习科目，"
-                    "生成一个科学合理、可执行的学习计划。"
-                    "计划应该包含阶段划分、时间分配、每日任务和具体建议。"
-                    "只输出JSON格式，不要有其他文字。"
-                )
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
+            {"role": "system", "content": "你是一个专业的日程规划助手，只输出 JSON。"},
+            {"role": "user", "content": prompt}
         ],
-        "temperature": 0.3,   # 适度的创造性，保证多样性
-        "max_tokens": 800     # 需要较长的回复来包含详细计划
+        "temperature": 0.3,
+        "max_tokens": 800
     }
 
     try:
-        # 2. 请求 DeepSeek
-        resp = requests.post(
-            Config.DEEPSEEK_API_URL,
-            headers=headers,
-            json=payload,
-            timeout=15  # 未来日程可能需要更长时间
-        )
+        print(f"📤 向 DeepSeek 请求日程生成: goal={goal}, target_date={target_date}")
+        resp = requests.post(Config.DEEPSEEK_API_URL, headers=headers, json=payload, timeout=20)
         resp.raise_for_status()
+        content = resp.json()["choices"][0]["message"]["content"].strip()
+        print(f"📥 DeepSeek 响应内容长度: {len(content)} 字符")
 
-        # 安全提取返回内容
-        content = resp.json() \
-                      .get("choices", [{}])[0] \
-                      .get("message", {}) \
-                      .get("content", "")
-
-        # 3. 防御：空字符串直接返回默认值
-        content = content.strip()
         if not content:
+            print("⚠️ DeepSeek 返回空内容")
             return default_response
 
-        # 4. 容错解析 JSON
+        # 解析 JSON
         try:
             result = json.loads(content)
         except json.JSONDecodeError:
-            # 尝试去掉 ```json ``` 这种包裹
             content = content.replace("```json", "").replace("```", "").strip()
             result = json.loads(content)
 
-        # 5. 字段兜底（防止缺字段报错）
-        result.setdefault("ai_generated", True)
+        # 标记为 AI 生成
+        result["ai_generated"] = True
         result.setdefault("phases", [])
         result.setdefault("daily_tasks", [])
-        result.setdefault("advice", "AI生成的个性化学习计划")
+        result.setdefault("advice", "")
         result.setdefault("total_days", 30)
-        result.setdefault("total_hours", daily_hours * 30)
+        result.setdefault("total_hours", int(daily_hours * 30))
 
-        # 6. 验证数据结构
-        if not isinstance(result["phases"], list):
-            result["phases"] = []
-        if not isinstance(result["daily_tasks"], list):
-            result["daily_tasks"] = []
-
+        print(f"✅ AI 日程生成成功，包含 {len(result['phases'])} 个阶段")
         return result
 
-    except requests.RequestException as e:
-        # 兼容非 Flask 环境：尝试用 current_app.logger，失败则用 print
-        try:
-            from flask import current_app
-            current_app.logger.error(f"DeepSeek AI Schedule API error: {e}")
-        except (RuntimeError, ImportError):
-            print(f"[ERROR] DeepSeek AI Schedule API error: {e}")
-        return default_response
     except Exception as e:
-        try:
-            from flask import current_app
-            current_app.logger.error(f"Unexpected error in AI schedule: {e}")
-        except (RuntimeError, ImportError):
-            print(f"[ERROR] Unexpected error in AI schedule: {e}")
+        print(f"❌ AI 日程生成失败: {e}")
         return default_response
