@@ -16,7 +16,7 @@ def prices():
     返回比价结果列表，按价格升序排列
     """
     data = request.get_json(silent=True) or {}
-    if not data:
+    if not isinstance(data, dict):
         return error("Invalid JSON body")
 
     keywords = data.get("keywords", [])
@@ -25,5 +25,6 @@ def prices():
 
     # 调用搜索服务，传入关键词列表，自动完成模糊匹配、去重和排序
     deals = search_products_by_keywords(keywords)
+
 
     return success(deals)
