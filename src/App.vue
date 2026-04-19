@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed,onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   HomeFilled,
@@ -33,16 +33,18 @@ const navigateTo = (path) => {
 };
 
 // 响应式判断
-const isMobile = ref(window.innerWidth < 768);
-window.addEventListener("resize", () => {
+const isMobile = ref(false);
+const handleResize = () => {
   isMobile.value = window.innerWidth < 768;
-  onMounted(() => {
+};
+
+onMounted(() => {
   handleResize();
-  window.addEventListener('resize', handleResize);
+  window.addEventListener("resize", handleResize);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
+  window.removeEventListener("resize", handleResize);
 });
 </script>
 

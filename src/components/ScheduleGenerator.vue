@@ -23,11 +23,10 @@ const extraTimeLocation = ref("明天下午3点，中关村");
 const showCalendarOptions = ref(false);
 const googleCalendarLink = ref("");
 const outlookCalendarLink = ref("");
+const useMock = ref(import.meta.env.VITE_USE_MOCK === "true");
 
 // 环境变量
 const isDev = import.meta.env.DEV;
-import { ref } from "vue";
-const useMock = ref(import.meta.env.VITE_USE_MOCK === "true");
 
 // 监听props变化，自动填充数据
 watch(
