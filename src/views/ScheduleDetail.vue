@@ -136,6 +136,7 @@ const addToHistory = () => {
     event_count: events.value.length,
     timestamp: new Date().toISOString(),
     result: scheduleResult.value,
+    events: events.value,
   };
 
   scheduleHistory.value.unshift(historyItem);

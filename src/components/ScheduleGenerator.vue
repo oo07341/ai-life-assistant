@@ -26,7 +26,8 @@ const outlookCalendarLink = ref("");
 
 // 环境变量
 const isDev = import.meta.env.DEV;
-const useMock = import.meta.env.VITE_USE_MOCK === "true";
+import { ref } from "vue";
+const useMock = ref(import.meta.env.VITE_USE_MOCK === "true");
 
 // 监听props变化，自动填充数据
 watch(
@@ -285,7 +286,7 @@ async function generateSchedule() {
     let message = "AI已成功根据您的需求规划日程";
 
     // 使用组件顶部定义的useMock变量
-    if (useMock) {
+    if (useMock.value) {
       console.log("使用Mock数据生成日程");
       events = currentMockEvents.value;
     } else {
@@ -412,11 +413,7 @@ async function generateSchedule() {
 
       <div class="mock-toggle" v-if="isDev">
         <label>
-          <input
-            type="checkbox"
-            :checked="useMock"
-            @change="(e) => console.log('Mock切换:', e.target.checked)"
-          />
+          <input type="checkbox" v-model="useMock" />
           使用Mock数据（开发模式）
         </label>
       </div>

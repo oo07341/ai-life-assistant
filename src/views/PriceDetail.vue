@@ -142,6 +142,7 @@ const addToHistory = () => {
     result_count: priceResults.value.length,
     timestamp: new Date().toISOString(),
     analysis: analysisResult.value,
+    results: priceResults.value,
   };
 
   priceHistory.value.unshift(historyItem);

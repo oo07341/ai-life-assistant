@@ -273,6 +273,7 @@ const loadHistory = () => {
   } catch (error) {
     console.error("加载历史记录失败:", error);
     history.value = [];
+    ElMessage.error("读取历史记录失败，请检查浏览器存储设置");
   }
 };
 

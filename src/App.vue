@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed,onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   HomeFilled,
@@ -36,6 +36,13 @@ const navigateTo = (path) => {
 const isMobile = ref(window.innerWidth < 768);
 window.addEventListener("resize", () => {
   isMobile.value = window.innerWidth < 768;
+  onMounted(() => {
+  handleResize();
+  window.addEventListener('resize', handleResize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
 });
 </script>
 
