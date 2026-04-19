@@ -174,6 +174,62 @@ POST /api/schedule
 - `PUT /api/plan/:id` - 更新计划
 - `DELETE /api/plan/:id` - 删除计划
 
+## 数据库设计
+
+### 1. users 用户表
+
+| 字段       | 类型                                 | 说明                           |
+| ---------- | ------------------------------------ | ------------------------------ |
+| id         | INT AUTO_INCREMENT PRIMARY KEY       | 自增主键                       |
+| user_uuid  | VARCHAR(36) UNIQUE NOT NULL          | 前端生成的 UUID，用于 API 识别 |
+| nickname   | VARCHAR(64)                          | 昵称                           |
+| created_at | DATETIME DEFAULT CURRENT_TIMESTAMP   | 创建时间                       |
+| updated_at | DATETIME ON UPDATE CURRENT_TIMESTAMP | 更新时间                       |
+
+### 2. plans 计划表
+
+| 字段           | 类型                                 | 说明                           |
+| -------------- | ------------------------------------ | ------------------------------ |
+| id             | INT AUTO_INCREMENT PRIMARY KEY       | 自增主键                       |
+| plan_uuid      | VARCHAR(36) UNIQUE NOT NULL          | 计划唯一标识（对应原 plan_id） |
+| user_id        | INT NOT NULL                         | 外键 → users.id                |
+| goal           | VARCHAR(128) NOT NULL                | 目标名称                       |
+| schedule_info  | JSON NOT NULL                        | 原始 schedule_info 参数        |
+| schedule_data  | JSON NOT NULL                        | 生成的 schedule 数组           |
+| ics_content    | TEXT                                 | 日历文件内容                   |
+| is_active      | BOOLEAN DEFAULT TRUE                 | 是否为当前激活计划             |
+| parent_plan_id | INT NULL                             | 外键 → plans.id（合并来源）    |
+| created_at     | DATETIME DEFAULT CURRENT_TIMESTAMP   | 创建时间                       |
+| updated_at     | DATETIME ON UPDATE CURRENT_TIMESTAMP | 更新时间                       |
+
+**索引**: INDEX (user_id, is_active)
+
+### 3. daily_tasks 每日任务打卡表
+
+| 字段         | 类型                           | 说明            |
+| ------------ | ------------------------------ | --------------- |
+| id           | INT AUTO_INCREMENT PRIMARY KEY | 自增主键        |
+| plan_id      | INT NOT NULL                   | 外键 → plans.id |
+| task_date    | DATE NOT NULL                  | 任务日期        |
+| completed    | BOOLEAN DEFAULT FALSE          | 是否已完成      |
+| completed_at | DATETIME NULL                  | 完成时间        |
+
+**唯一约束**: UNIQUE KEY (plan_id, task_date) - 同一计划同一天只有一条记录
+
+### 4. search_logs 搜索日志表（可选，满足分析/日志需求）
+
+| 字段         | 类型                               | 说明                    |
+| ------------ | ---------------------------------- | ----------------------- |
+| id           | INT AUTO_INCREMENT PRIMARY KEY     | 自增主键                |
+| user_id      | INT NULL                           | 外键 → users.id（可空） |
+| query        | VARCHAR(255) NOT NULL              | 原始查询                |
+| intent       | VARCHAR(32)                        | 解析出的意图            |
+| keywords     | JSON                               | 提取的关键词数组        |
+| result_count | INT                                | 返回结果数量            |
+| created_at   | DATETIME DEFAULT CURRENT_TIMESTAMP | 搜索时间                |
+
+**索引**: INDEX (user_id, created_at)
+
 ## 开发指南
 
 ### 前端开发
