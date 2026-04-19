@@ -257,7 +257,7 @@ const loadHistory = () => {
     const scheduleItems = scheduleHistory.map((item) => ({
       id: `schedule_${item.id || Date.now()}`,
       type: "schedule",
-      title: "日程规划",
+      title: "未来日程",
       query: item.query || "未知查询",
       timestamp: item.timestamp || new Date().toISOString(),
       eventCount: item.events?.length || 0,

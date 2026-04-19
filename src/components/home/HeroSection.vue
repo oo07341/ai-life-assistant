@@ -2,19 +2,19 @@
   <section class="hero-section">
     <div class="hero-content">
       <div class="hero-text">
-        <h1 class="hero-title">🤖 AI生活助手</h1>
-        <p class="hero-subtitle">智能比价 + 日程规划，一站式生活解决方案</p>
+        <h1 class="hero-title">🤖 喂来日程</h1>
+        <p class="hero-subtitle">一点外卖 + 未来日程，一站式生活解决方案</p>
         <p class="hero-description">
-          基于AI技术，为您提供智能购物比价和日程规划服务，让生活更简单、更高效
+          基于AI技术，为您提供智能购物比价和未来日程服务，让生活更简单、更高效
         </p>
         <div class="hero-actions">
           <el-button type="primary" size="large" @click="navigateToPrice">
             <el-icon><ShoppingCart /></el-icon>
-            开始比价
+            一点外卖
           </el-button>
           <el-button type="success" size="large" @click="navigateToSchedule">
             <el-icon><Calendar /></el-icon>
-            规划日程
+            未来规划
           </el-button>
         </div>
       </div>

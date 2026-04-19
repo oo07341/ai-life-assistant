@@ -3,7 +3,7 @@
     <!-- 页面标题 -->
     <div class="page-header">
       <h1>
-        <el-icon><Calendar /></el-icon> AI日程规划
+        <el-icon><Calendar /></el-icon> 未来日程
       </h1>
       <p class="page-subtitle">
         智能规划您的购物时间，生成日历文件，支持多平台导入

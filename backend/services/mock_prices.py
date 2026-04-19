@@ -245,7 +245,7 @@ MOCK_PRODUCTS = [
 
 # ---------- 搜索函数（适配新数据结构）----------
 def search_products_by_keywords(keywords: list) -> list:
-    """根据关键词模糊搜索，返回聚合后的商品组（同一商品不同平台价格）"""
+    """根据关键词模糊搜索，返回前端期望的扁平商品列表"""
     if not keywords or not isinstance(keywords, list):
         return []
 
@@ -257,7 +257,7 @@ def search_products_by_keywords(keywords: list) -> list:
         if any(kw in name_lower for kw in lower_kws):
             matched.append(item)
 
-    # 按 (shop_name, item_name) 聚合
+    # 按 (shop_name, item_name) 聚合，找出每个商品的最低价格
     groups = {}
     for item in matched:
         key = (item["shop_name"], item["item_name"])
@@ -285,21 +285,49 @@ def search_products_by_keywords(keywords: list) -> list:
     # 按最低价全局排序
     result_groups.sort(key=lambda x: x["lowest_price"])
 
-    return result_groups[:8]  # 返回前8组
+    # 转换为前端期望的扁平格式
+    import random
+    flat_products = []
+    product_id = 1
+    
+    for group in result_groups[:8]:  # 只返回前8个商品
+        # 为每个平台创建一个独立的商品条目
+        for i, platform_info in enumerate(group["platforms"]):
+            price = platform_info["price"]
+            original_price = round(price * random.uniform(1.1, 1.3), 1)  # 模拟原价
+            discount = round(price / original_price, 2)  # 计算折扣
+            
+            # 生成随机评分和配送时间
+            rating = round(random.uniform(4.0, 5.0), 1)
+            delivery_times = ["20-30分钟", "30-40分钟", "40-50分钟", "50-60分钟"]
+            delivery_time = random.choice(delivery_times)
+            
+            # 判断是否是最佳性价比（同一商品中价格最低的平台）
+            is_best_value = (i == 0)  # 第一个平台是最低价的
+            
+            product = {
+                "id": product_id,
+                "name": f"{group['shop_name']} {group['item_name']}",
+                "platform": platform_info["platform"],
+                "price": price,
+                "originalPrice": original_price,
+                "discount": discount,
+                "shopName": group["shop_name"],
+                "rating": rating,
+                "deliveryTime": delivery_time,
+                "description": f"{group['item_name']}，{group['location']}，{platform_info['platform']}专享",
+                "isBestValue": is_best_value,
+                "url": platform_info["deeplink"]
+            }
+            flat_products.append(product)
+            product_id += 1
+
+    return flat_products
 
 # 兼容旧接口
 def get_mock_prices(keyword: str) -> list:
+    """兼容旧接口，返回扁平商品列表"""
     if not keyword:
         return []
-    groups = search_products_by_keywords([keyword])
-    # 兼容旧格式：展开为扁平列表
-    flat = []
-    for g in groups:
-        for p in g["platforms"]:
-            flat.append({
-                "name": f"{g['shop_name']} {g['item_name']}",
-                "platform": p["platform"],
-                "price": p["price"],
-                "url": p["deeplink"]
-            })
-    return flat
+    # 直接使用新的搜索函数，它已经返回扁平格式
+    return search_products_by_keywords([keyword])

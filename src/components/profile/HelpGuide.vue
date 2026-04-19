@@ -26,24 +26,24 @@
       <el-tabs v-model="activeCategory" type="card" @tab-click="handleTabClick">
         <el-tab-pane label="快速入门" name="quickstart">
           <div class="category-content">
-            <h3>AI生活助手快速入门</h3>
+            <h3>喂来日程快速入门</h3>
             <p>
-              欢迎使用AI生活助手！本应用提供两大核心功能：智能比价和日程规划。
+              欢迎使用喂来日程！本应用提供两大核心功能：一点外卖和未来日程。
             </p>
 
             <div class="feature-section">
-              <h4>📊 智能比价功能</h4>
+              <h4>📊 一点外卖功能</h4>
               <ol>
                 <li>在比价页面输入您想查询的商品名称</li>
                 <li>选择您关注的电商平台（淘宝、京东、拼多多等）</li>
-                <li>点击"开始比价"按钮</li>
+                <li>点击"一点外卖"按钮</li>
                 <li>系统将为您展示各平台的价格对比和优惠信息</li>
                 <li>您可以收藏感兴趣的商品或查看历史比价记录</li>
               </ol>
             </div>
 
             <div class="feature-section">
-              <h4>📅 日程规划功能</h4>
+              <h4>📅 未来日程功能</h4>
               <ol>
                 <li>在日程页面输入您的日程安排需求</li>
                 <li>例如："下周一上午开会，下午写报告，晚上健身"</li>
@@ -60,7 +60,7 @@
             <h3>功能详细说明</h3>
 
             <el-collapse v-model="activeFeatures">
-              <el-collapse-item title="智能比价" name="price">
+              <el-collapse-item title="一点外卖" name="price">
                 <div class="feature-detail">
                   <h4>核心特性：</h4>
                   <ul>
@@ -87,7 +87,7 @@
                 </div>
               </el-collapse-item>
 
-              <el-collapse-item title="日程规划" name="schedule">
+              <el-collapse-item title="未来日程" name="schedule">
                 <div class="feature-detail">
                   <h4>核心特性：</h4>
                   <ul>

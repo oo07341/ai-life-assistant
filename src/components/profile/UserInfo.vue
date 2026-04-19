@@ -13,7 +13,7 @@
           <el-avatar :size="80" :icon="UserFilled" />
         </div>
         <div class="user-basic">
-          <h3>AI生活助手用户</h3>
+          <h3>喂来日程用户</h3>
           <p class="user-email">user@example.com</p>
           <el-tag type="success" size="small">普通用户</el-tag>
         </div>
@@ -26,7 +26,7 @@
         </div>
         <div class="stat-item">
           <div class="stat-value">8</div>
-          <div class="stat-label">日程规划</div>
+          <div class="stat-label">未来日程</div>
         </div>
         <div class="stat-item">
           <div class="stat-value">5</div>

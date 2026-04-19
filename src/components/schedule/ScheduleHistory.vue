@@ -4,7 +4,7 @@
       <h3>
         <el-icon><Clock /></el-icon> 日程历史记录
       </h3>
-      <p class="history-subtitle">查看您之前生成的日程规划</p>
+      <p class="history-subtitle">查看您之前生成的未来日程</p>
     </div>
 
     <div class="history-content">

@@ -163,7 +163,7 @@ def generate_ai_schedule(goal: str, target_date: str, daily_hours: float = 4.0, 
         "Content-Type": "application/json"
     }
 
-    # 构造请求体 - 详细的日程规划提示词
+    # 构造请求体 - 详细的未来日程提示词
     subjects_text = "、".join(subjects) if subjects else "相关科目"
     prompt = f"""
     你是一个专业的学业规划师。请为以下学习目标生成详细的学习计划：
@@ -215,7 +215,7 @@ def generate_ai_schedule(goal: str, target_date: str, daily_hours: float = 4.0, 
             Config.DEEPSEEK_API_URL,
             headers=headers,
             json=payload,
-            timeout=15  # 日程规划可能需要更长时间
+            timeout=15  # 未来日程可能需要更长时间
         )
         resp.raise_for_status()
 

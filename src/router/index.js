@@ -12,7 +12,7 @@ const routes = [
     name: "Home",
     component: Home,
     meta: {
-      title: "AI生活助手 - 首页",
+      title: "喂来日程 - 首页",
       requiresAuth: false,
     },
   },
@@ -21,7 +21,7 @@ const routes = [
     name: "Price",
     component: PriceDetail,
     meta: {
-      title: "AI智能比价 - 详情",
+      title: "一点外卖 - 详情",
       requiresAuth: false,
     },
   },
@@ -30,7 +30,7 @@ const routes = [
     name: "Schedule",
     component: ScheduleDetail,
     meta: {
-      title: "AI日程规划 - 详情",
+      title: "未来日程 - 详情",
       requiresAuth: false,
     },
   },

@@ -3,7 +3,7 @@
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">🚀 使用流程</h2>
-        <p class="section-subtitle">简单三步，快速体验AI生活助手</p>
+        <p class="section-subtitle">简单三步，快速体验喂来日程</p>
       </div>
 
       <div class="workflow-steps">
@@ -44,10 +44,10 @@
             </p>
             <div class="step-actions">
               <el-button type="primary" @click="navigateToPrice">
-                开始比价
+                一点外卖
               </el-button>
               <el-button type="success" @click="navigateToSchedule">
-                规划日程
+                未来规划
               </el-button>
             </div>
           </div>

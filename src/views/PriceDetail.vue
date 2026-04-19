@@ -3,7 +3,7 @@
     <!-- 页面标题 -->
     <div class="page-header">
       <h1>
-        <el-icon><ShoppingCart /></el-icon> AI智能比价
+        <el-icon><ShoppingCart /></el-icon> 一点外卖
       </h1>
       <p class="page-subtitle">
         输入您的需求，AI为您分析意图并推荐最佳购买方案

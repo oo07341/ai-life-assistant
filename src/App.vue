@@ -18,8 +18,8 @@ const activeMenu = computed(() => route.name || "Home");
 // 导航菜单项
 const menuItems = [
   { name: "Home", path: "/", icon: HomeFilled, label: "首页" },
-  { name: "Price", path: "/price", icon: ShoppingCart, label: "智能比价" },
-  { name: "Schedule", path: "/schedule", icon: Calendar, label: "日程规划" },
+  { name: "Price", path: "/price", icon: ShoppingCart, label: "一点外卖" },
+  { name: "Schedule", path: "/schedule", icon: Calendar, label: "未来日程" },
   { name: "Profile", path: "/profile", icon: User, label: "个人中心" },
 ];
 
@@ -57,8 +57,8 @@ onUnmounted(() => {
         <div class="header-logo" @click="navigateTo('/')">
           <div class="logo-icon">🤖</div>
           <div class="logo-text">
-            <h1>AI生活助手</h1>
-            <p class="logo-subtitle">智能比价 + 日程规划</p>
+            <h1>喂来日程</h1>
+            <p class="logo-subtitle">一点外卖 + 未来日程</p>
           </div>
         </div>
 

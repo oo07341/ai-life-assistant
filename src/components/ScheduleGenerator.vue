@@ -229,7 +229,7 @@ async function tryAddToWebCalendar(events) {
 // 调用后端API
 async function callAIScheduleAPI(query, extraInfo = {}) {
   const requestBody = {
-    query: query || "用户日程规划需求",
+    query: query || "用户未来日程需求",
     context_time: new Date().toISOString(),
     extra_info: extraInfo,
   };
@@ -275,7 +275,7 @@ async function generateSchedule() {
 
   try {
     // 收集页面上下文信息 - 使用用户输入的值
-    const query = userQuery.value || "用户日程规划需求";
+    const query = userQuery.value || "用户未来日程需求";
     const extraInfo = {
       time_location: extraTimeLocation.value || "",
     };
@@ -297,7 +297,7 @@ async function generateSchedule() {
         message = result.message || message;
 
         console.log(
-          `AI日程规划成功 (${source === "deepseek_ai" ? "DeepSeek AI" : "Mock数据"})`,
+          `未来日程成功 (${source === "deepseek_ai" ? "DeepSeek AI" : "Mock数据"})`,
         );
       } catch (apiError) {
         console.error("API调用失败，降级到Mock数据:", apiError);
@@ -363,7 +363,7 @@ async function generateSchedule() {
 
 <template>
   <div class="schedule-generator">
-    <h2>AI日程规划</h2>
+    <h2>未来日程</h2>
     <p class="description">
       点击按钮，AI将根据您的需求智能规划日程并生成日历文件
     </p>

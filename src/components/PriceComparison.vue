@@ -2,7 +2,7 @@
   <div class="price-comparison">
     <!-- 搜索区域 -->
     <div class="search-section">
-      <h2>🔍 AI智能比价</h2>
+      <h2>🔍 一点外卖</h2>
       <p class="subtitle">输入您的需求，AI帮您全网比价</p>
 
       <div class="search-box">
@@ -18,7 +18,7 @@
               :loading="isAnalyzing"
               @click="handleSearch"
             >
-              {{ isAnalyzing ? "AI分析中..." : "智能比价" }}
+              {{ isAnalyzing ? "AI分析中..." : "一点外卖" }}
             </el-button>
           </template>
         </el-input>

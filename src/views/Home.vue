@@ -7,7 +7,7 @@
 
     <!-- 页脚 -->
     <footer class="app-footer">
-      <p>AI生活助手 - 让AI为您的生活提供智能解决方案</p>
+      <p>喂来日程 - 让AI为您的生活提供智能解决方案</p>
       <p class="footer-links">
         <el-button type="text" @click="showAbout">关于</el-button>
         <el-button type="text" @click="showHelp">帮助</el-button>
@@ -16,12 +16,12 @@
     </footer>
 
     <!-- 关于对话框 -->
-    <el-dialog v-model="showAboutDialog" title="关于AI生活助手" width="500px">
+    <el-dialog v-model="showAboutDialog" title="关于喂来日程" width="500px">
       <div class="about-content">
         <h3>项目简介</h3>
         <p>
-          AI生活助手是一个基于Vue 3 + Element
-          Plus的智能生活工具，结合了AI智能比价和日程规划两大核心功能。
+          喂来日程是一个基于Vue 3 + Element
+          Plus的智能生活工具，结合了一点外卖和未来日程两大核心功能。
         </p>
 
         <h3>技术栈</h3>

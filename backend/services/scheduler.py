@@ -323,7 +323,7 @@ def generate_schedule_event(item: Optional[str] = None, preferred_time: Optional
 
     return {
         "title": f"购买 {item_str}",
-        "description": f"AI 智能比价推荐：{item_str}。建议 {start_time.strftime('%Y-%m-%d %H:%M')} 出发",
+        "description": f"AI 一点外卖推荐：{item_str}。建议 {start_time.strftime('%Y-%m-%d %H:%M')} 出发",
         "location": "线上/附近门店",
         "start": format_time(start_time),
         "end": format_time(end_time),

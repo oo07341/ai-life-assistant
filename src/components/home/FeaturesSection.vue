@@ -7,12 +7,12 @@
       </div>
 
       <div class="features-grid">
-        <!-- 功能1：AI智能比价 -->
+        <!-- 功能1：一点外卖 -->
         <div class="feature-card">
           <div class="feature-icon">
             <el-icon><ShoppingCart /></el-icon>
           </div>
-          <h3 class="feature-title">AI智能比价</h3>
+          <h3 class="feature-title">一点外卖</h3>
           <p class="feature-description">
             输入您的购物需求，AI分析意图并为您推荐最佳购买方案，支持多平台比价
           </p>
@@ -23,16 +23,16 @@
             <li>购买建议推荐</li>
           </ul>
           <el-button type="primary" @click="navigateToPrice">
-            开始比价
+            一点外卖
           </el-button>
         </div>
 
-        <!-- 功能2：AI日程规划 -->
+        <!-- 功能2：未来日程 -->
         <div class="feature-card">
           <div class="feature-icon">
             <el-icon><Calendar /></el-icon>
           </div>
-          <h3 class="feature-title">AI日程规划</h3>
+          <h3 class="feature-title">未来日程</h3>
           <p class="feature-description">
             描述您的日程需求，AI为您生成完整的日程安排，并导出为日历文件
           </p>
@@ -43,7 +43,7 @@
             <li>多设备同步</li>
           </ul>
           <el-button type="success" @click="navigateToSchedule">
-            规划日程
+            未来规划
           </el-button>
         </div>
 
