@@ -56,6 +56,12 @@ const menuItems = [
     icon: ShoppingCart,
     label: "价格查询",
   },
+  {
+    name: "Price",
+    path: "/price",
+    icon: ShoppingCart,
+    label: "一点外卖",
+  },
   { name: "Schedule", path: "/schedule", icon: Calendar, label: "未来日程" },
   { name: "Plans", path: "/plans", icon: Document, label: "计划管理" },
   { name: "Profile", path: "/profile", icon: User, label: "个人中心" },
