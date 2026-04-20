@@ -89,6 +89,8 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import {
   User,
   UserFilled,
@@ -100,20 +102,53 @@ import {
 } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 
+const router = useRouter();
+
 // 用户信息
-const userInfo = {
-  username: "AI助手用户",
-  email: "user@example.com",
-  registerDate: "2024-01-15",
-  isPremium: true,
-};
+const userInfo = ref({
+  username: "加载中...",
+  email: "加载中...",
+  registerDate: new Date().toISOString(),
+  isPremium: false,
+});
 
 // 使用统计
-const userStats = {
-  priceQueries: 128,
-  scheduleEvents: 45,
-  totalSearches: 256,
-  activeDays: 89,
+const userStats = ref({
+  priceQueries: 0,
+  scheduleEvents: 0,
+  totalSearches: 0,
+  activeDays: 0,
+});
+
+// 加载用户数据
+const loadUserData = () => {
+  try {
+    // 从localStorage加载用户信息
+    const storedUserInfo = localStorage.getItem("userInfo");
+    if (storedUserInfo) {
+      const parsedInfo = JSON.parse(storedUserInfo);
+      userInfo.value = {
+        username: parsedInfo.username || "用户",
+        email: parsedInfo.email || "未设置",
+        registerDate: parsedInfo.registerDate || new Date().toISOString(),
+        isPremium: parsedInfo.isPremium || false,
+      };
+    }
+
+    // 模拟从后端API获取统计数据
+    // 在实际应用中，这里应该调用后端API
+    setTimeout(() => {
+      userStats.value = {
+        priceQueries: Math.floor(Math.random() * 100) + 50,
+        scheduleEvents: Math.floor(Math.random() * 50) + 20,
+        totalSearches: Math.floor(Math.random() * 200) + 100,
+        activeDays: Math.floor(Math.random() * 30) + 60,
+      };
+    }, 500);
+  } catch (error) {
+    console.error("加载用户数据失败:", error);
+    ElMessage.error("加载用户数据失败");
+  }
 };
 
 // 格式化日期
@@ -144,6 +179,11 @@ const changePassword = () => {
 const viewActivity = () => {
   ElMessage.info("查看活动功能开发中");
 };
+
+// 页面加载时加载用户数据
+onMounted(() => {
+  loadUserData();
+});
 </script>
 
 <style scoped>

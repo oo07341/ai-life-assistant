@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   HomeFilled,
@@ -7,13 +7,42 @@ import {
   Calendar,
   User,
   Menu as IconMenu,
+  SwitchButton,
+  Setting,
 } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
 
 const route = useRoute();
 const router = useRouter();
 
+// 用户状态
+const isLoggedIn = ref(false);
+const userInfo = ref(null);
+
+// 检查登录状态
+const checkLoginStatus = () => {
+  const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const userData = localStorage.getItem("userInfo");
+
+  isLoggedIn.value = loggedIn;
+  if (userData) {
+    try {
+      userInfo.value = JSON.parse(userData);
+    } catch (error) {
+      userInfo.value = null;
+    }
+  } else {
+    userInfo.value = null;
+  }
+};
+
 // 当前激活的菜单
 const activeMenu = computed(() => route.name || "Home");
+
+// 是否显示导航栏
+const showNavigation = computed(() => {
+  return !route.meta.hideNavigation;
+});
 
 // 导航菜单项
 const menuItems = [
@@ -32,15 +61,59 @@ const navigateTo = (path) => {
   isMobileMenuOpen.value = false;
 };
 
+// 用户操作
+const handleUserCommand = (command) => {
+  switch (command) {
+    case "profile":
+      router.push("/profile");
+      break;
+    case "settings":
+      // 这里可以跳转到设置页面
+      ElMessage.info("设置功能开发中");
+      break;
+    case "logout":
+      handleLogout();
+      break;
+  }
+};
+
+const handleLogout = () => {
+  localStorage.removeItem("isLoggedIn");
+  localStorage.removeItem("userInfo");
+  isLoggedIn.value = false;
+  userInfo.value = null;
+  ElMessage.success("已退出登录");
+
+  if (route.meta.requiresAuth) {
+    router.push("/login");
+  } else {
+    router.push("/");
+  }
+};
+
+const handleLogin = () => {
+  router.push("/login");
+};
+
 // 响应式判断
 const isMobile = ref(false);
 const handleResize = () => {
   isMobile.value = window.innerWidth < 768;
 };
 
+// 监听路由变化
+watch(
+  () => route.path,
+  () => {
+    checkLoginStatus();
+    isMobileMenuOpen.value = false;
+  },
+);
+
 onMounted(() => {
   handleResize();
   window.addEventListener("resize", handleResize);
+  checkLoginStatus();
 });
 
 onUnmounted(() => {
@@ -51,7 +124,7 @@ onUnmounted(() => {
 <template>
   <div class="app-container">
     <!-- 顶部导航栏 -->
-    <header class="app-header">
+    <header class="app-header" v-if="showNavigation">
       <div class="header-container">
         <!-- Logo和标题 -->
         <div class="header-logo" @click="navigateTo('/')">
@@ -59,6 +132,44 @@ onUnmounted(() => {
           <div class="logo-text">
             <h1>喂来日程</h1>
             <p class="logo-subtitle">一点外卖 + 未来日程</p>
+          </div>
+        </div>
+
+        <!-- 用户操作区域 -->
+        <div class="user-actions" v-if="!isMobile">
+          <div class="user-info" v-if="isLoggedIn && userInfo">
+            <span class="username">{{ userInfo.username }}</span>
+            <el-dropdown @command="handleUserCommand">
+              <span class="user-avatar">
+                <el-avatar :size="32" :src="userInfo.avatar">
+                  {{ userInfo.username.charAt(0).toUpperCase() }}
+                </el-avatar>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="profile">
+                    <el-icon><User /></el-icon>
+                    个人中心
+                  </el-dropdown-item>
+                  <el-dropdown-item command="settings">
+                    <el-icon><Setting /></el-icon>
+                    设置
+                  </el-dropdown-item>
+                  <el-dropdown-item divided command="logout">
+                    <el-icon><SwitchButton /></el-icon>
+                    退出登录
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+          <div class="auth-buttons" v-else>
+            <el-button type="primary" size="small" @click="handleLogin">
+              登录
+            </el-button>
+            <el-button size="small" @click="navigateTo('/register')">
+              注册
+            </el-button>
           </div>
         </div>
 
@@ -109,6 +220,33 @@ onUnmounted(() => {
           >
             <el-icon><component :is="item.icon" /></el-icon>
             <span>{{ item.label }}</span>
+          </div>
+          <!-- 移动端用户操作 -->
+          <div class="mobile-user-actions">
+            <div v-if="isLoggedIn && userInfo" class="mobile-user-info">
+              <el-avatar :size="40" :src="userInfo.avatar">
+                {{ userInfo.username.charAt(0).toUpperCase() }}
+              </el-avatar>
+              <div class="mobile-user-details">
+                <div class="mobile-username">{{ userInfo.username }}</div>
+                <div class="mobile-email">{{ userInfo.email }}</div>
+              </div>
+            </div>
+            <div class="mobile-auth-buttons" v-else>
+              <el-button
+                type="primary"
+                @click="handleLogin"
+                class="mobile-login-btn"
+              >
+                登录
+              </el-button>
+              <el-button
+                @click="navigateTo('/register')"
+                class="mobile-register-btn"
+              >
+                注册
+              </el-button>
+            </div>
           </div>
         </div>
       </div>
@@ -202,6 +340,39 @@ onUnmounted(() => {
   margin: 0;
 }
 
+/* 用户操作区域 */
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.username {
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+}
+
+.user-avatar {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.user-avatar:hover {
+  opacity: 0.9;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 8px;
+}
+
 /* 桌面端导航菜单 */
 .desktop-nav {
   flex: 1;
@@ -281,6 +452,44 @@ onUnmounted(() => {
 
 .mobile-menu-item .el-icon {
   font-size: 18px;
+}
+
+/* 移动端用户操作 */
+.mobile-user-actions {
+  padding: 16px 24px;
+  border-top: 1px solid #e4e7ed;
+}
+
+.mobile-user-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mobile-user-details {
+  flex: 1;
+}
+
+.mobile-username {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.mobile-email {
+  font-size: 14px;
+  color: #909399;
+}
+
+.mobile-auth-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.mobile-login-btn,
+.mobile-register-btn {
+  flex: 1;
 }
 
 /* 主内容区域 */
