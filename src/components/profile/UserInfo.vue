@@ -101,6 +101,7 @@ import {
   Histogram,
 } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
+import { userAPI } from "@/services/api";
 
 const router = useRouter();
 
@@ -120,8 +121,12 @@ const userStats = ref({
   activeDays: 0,
 });
 
+// 加载状态
+const loading = ref(true);
+
 // 加载用户数据
-const loadUserData = () => {
+const loadUserData = async () => {
+  loading.value = true;
   try {
     // 从localStorage加载用户信息
     const storedUserInfo = localStorage.getItem("userInfo");
@@ -135,19 +140,55 @@ const loadUserData = () => {
       };
     }
 
-    // 模拟从后端API获取统计数据
-    // 在实际应用中，这里应该调用后端API
-    setTimeout(() => {
+    // 调用后端API获取用户统计数据
+    try {
+      const stats = await userAPI.getStats();
+      userStats.value = {
+        priceQueries: stats.price_comparison_count || 0,
+        scheduleEvents: stats.future_schedule_count || 0,
+        totalSearches:
+          (stats.price_comparison_count || 0) +
+          (stats.future_schedule_count || 0),
+        activeDays: stats.calendar_file_count || 0,
+      };
+    } catch (apiError) {
+      console.error("获取用户统计数据失败:", apiError);
+      // 如果API调用失败，使用模拟数据
       userStats.value = {
         priceQueries: Math.floor(Math.random() * 100) + 50,
         scheduleEvents: Math.floor(Math.random() * 50) + 20,
         totalSearches: Math.floor(Math.random() * 200) + 100,
         activeDays: Math.floor(Math.random() * 30) + 60,
       };
-    }, 500);
+    }
+
+    // 尝试获取用户个人中心概览信息
+    try {
+      const profile = await userAPI.getProfile();
+      if (profile && profile.user_id) {
+        // 更新用户信息
+        userInfo.value.username = profile.user_id || userInfo.value.username;
+        userInfo.value.email =
+          `${profile.user_id}@example.com` || userInfo.value.email;
+
+        // 如果有激活计划，显示相关信息
+        if (profile.active_plan_id) {
+          userInfo.value.activePlan = {
+            id: profile.active_plan_id,
+            goal: profile.active_plan_goal,
+            targetDate: profile.active_plan_target_date,
+          };
+        }
+      }
+    } catch (profileError) {
+      console.error("获取用户概览信息失败:", profileError);
+      // 忽略错误，继续使用localStorage中的信息
+    }
   } catch (error) {
     console.error("加载用户数据失败:", error);
     ElMessage.error("加载用户数据失败");
+  } finally {
+    loading.value = false;
   }
 };
 

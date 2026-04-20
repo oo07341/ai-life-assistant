@@ -245,8 +245,9 @@ const handleLogin = async () => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     // 保存用户信息到localStorage
+    const userId = "test_user_001"; // 使用固定的测试用户ID，与API服务一致
     const userInfo = {
-      id: "user_" + Date.now(),
+      id: userId,
       email: loginForm.email,
       username: loginForm.email.split("@")[0],
       isPremium: true,
@@ -255,6 +256,7 @@ const handleLogin = async () => {
 
     localStorage.setItem("userInfo", JSON.stringify(userInfo));
     localStorage.setItem("isLoggedIn", "true");
+    localStorage.setItem("userId", userId); // 保存userId供API服务使用
 
     ElMessage.success("登录成功！");
 

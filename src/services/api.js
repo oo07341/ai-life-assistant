@@ -12,9 +12,13 @@ const API_BASE_URL =
 async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
 
+  // 从localStorage获取用户ID
+  const userId = localStorage.getItem("userId") || "test_user_001";
+
   const defaultOptions = {
     headers: {
       "Content-Type": "application/json",
+      "X-User-Id": userId,
     },
   };
 
@@ -115,41 +119,105 @@ export const userAPI = {
 
   // 获取用户统计数据
   getStats: () => request("/api/user/stats"),
+
+  // 获取用户计划列表
+  getPlans: () => request("/api/user/plans"),
+
+  // 获取激活计划
+  getActivePlan: () => request("/api/user/active-plan"),
+
+  // 切换激活计划
+  switchPlan: (planId) =>
+    request("/api/user/switch-plan", {
+      method: "POST",
+      body: JSON.stringify({ plan_id: planId }),
+    }),
 };
 
 /**
  * 计划相关API
  */
 export const planAPI = {
-  // 获取计划列表
-  getPlans: () => request("/api/plan"),
-
-  // 创建计划
-  createPlan: (plan) =>
-    request("/api/plan", {
+  // 保存新计划
+  savePlan: (scheduleInfo) =>
+    request("/api/plan/save", {
       method: "POST",
-      body: JSON.stringify(plan),
+      body: JSON.stringify({ schedule_info: scheduleInfo }),
     }),
 
-  // 更新计划
-  updatePlan: (id, plan) =>
-    request(`/api/plan/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(plan),
+  // 更新计划进度
+  updateProgress: (planId, completedDates) =>
+    request("/api/plan/update-progress", {
+      method: "POST",
+      body: JSON.stringify({
+        plan_id: planId,
+        completed_dates: completedDates,
+      }),
     }),
 
-  // 删除计划
-  deletePlan: (id) =>
-    request(`/api/plan/${id}`, {
-      method: "DELETE",
+  // 合并计划
+  mergePlan: (scheduleInfo) =>
+    request("/api/plan/merge", {
+      method: "POST",
+      body: JSON.stringify({ schedule_info: scheduleInfo }),
     }),
 };
 
+/**
+ * 日程相关API
+ */
+export const scheduleAPI = {
+  // 生成日程计划
+  generateSchedule: (scheduleInfo) =>
+    request("/api/schedule", {
+      method: "POST",
+      body: JSON.stringify({ schedule_info: scheduleInfo }),
+    }),
+
+  // 调整日程计划
+  adjustSchedule: (
+    originalSchedule,
+    completedDates,
+    remainingSubjects,
+    targetDate,
+    dailyHours,
+  ) =>
+    request("/api/adjust-schedule", {
+      method: "POST",
+      body: JSON.stringify({
+        original_schedule: originalSchedule,
+        completed_dates: completedDates,
+        remaining_subjects: remainingSubjects,
+        target_date: targetDate,
+        daily_hours: dailyHours,
+      }),
+    }),
+};
+
+/**
+ * 价格相关API
+ */
+export const priceAPI = {
+  // 搜索商品
+  searchProducts: (keywords) =>
+    request("/api/prices", {
+      method: "POST",
+      body: JSON.stringify({ keywords }),
+    }),
+};
+
+// 重命名函数以避免冲突
+const analyzeIntentApi = analyzeIntent;
+const searchProductsApi = searchProducts;
+const generateScheduleApi = generateSchedule;
+
 export default {
-  analyzeIntent,
-  searchProducts,
-  generateSchedule,
+  analyzeIntent: analyzeIntentApi,
+  searchProducts: searchProductsApi,
+  generateSchedule: generateScheduleApi,
   getHotKeywords,
   userAPI,
   planAPI,
+  scheduleAPI,
+  priceAPI,
 };

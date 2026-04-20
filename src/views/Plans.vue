@@ -424,6 +424,7 @@ import {
   Document,
   Timer,
 } from "@element-plus/icons-vue";
+import { userAPI, planAPI, scheduleAPI } from "@/services/api";
 
 // 创建计划表单
 const createPlanFormRef = ref();
@@ -466,73 +467,118 @@ const createPlanRules = {
 const searchQuery = ref("");
 const filterStatus = ref("all");
 
-// 计划列表数据（模拟数据）
-const plans = ref([
-  {
-    id: "1",
-    goal: "学习Vue 3和Composition API",
-    targetDate: "2026-05-15",
-    timeSlots: "09:00-12:00, 14:00-17:00",
-    repeat: "daily",
-    priority: 3,
-    status: "active",
-    progress: 65,
-    notes: "重点学习响应式系统和组合式函数",
-    createdAt: "2026-04-10",
-    completedAt: null,
-    isActive: true,
-    daysElapsed: 10,
-    daysRemaining: 25,
-  },
-  {
-    id: "2",
-    goal: "完成健身计划",
-    targetDate: "2026-06-30",
-    timeSlots: "18:00-19:30",
-    repeat: "weekly",
-    priority: 2,
-    status: "active",
-    progress: 40,
-    notes: "每周三次力量训练，两次有氧运动",
-    createdAt: "2026-04-01",
-    completedAt: null,
-    isActive: false,
-    daysElapsed: 19,
-    daysRemaining: 71,
-  },
-  {
-    id: "3",
-    goal: "阅读《JavaScript高级程序设计》",
-    targetDate: "2026-04-30",
-    timeSlots: "20:00-21:30",
-    repeat: "daily",
-    priority: 2,
-    status: "completed",
-    progress: 100,
-    notes: "已完成前10章",
-    createdAt: "2026-03-15",
-    completedAt: "2026-04-18",
-    isActive: false,
-    daysElapsed: 35,
-    daysRemaining: 0,
-  },
-  {
-    id: "4",
-    goal: "准备技术分享",
-    targetDate: "2026-04-25",
-    timeSlots: "15:00-17:00",
-    repeat: "none",
-    priority: 3,
-    status: "expired",
-    progress: 30,
-    notes: "关于Vue 3新特性的分享",
-    createdAt: "2026-04-01",
-    completedAt: null,
-    isActive: false,
-    daysElapsed: 19,
-    daysRemaining: -6,
-  },
-]);
+// 加载状态
+const loading = ref(true);
+
+// 计划列表数据
+const plans = ref([]);
+
+// 加载计划数据
+const loadPlans = async () => {
+  loading.value = true;
+  try {
+    // 从后端API获取计划列表
+    const response = await userAPI.getPlans();
+
+    // API返回的是 { plans: [] } 格式
+    const plansData = response.plans || [];
+
+    // 转换数据格式以匹配前端
+    plans.value = plansData.map((plan) => ({
+      id: plan.plan_id || plan.id,
+      goal: plan.goal || "未命名计划",
+      targetDate:
+        plan.schedule_info?.target_date ||
+        plan.target_date ||
+        new Date().toISOString().split("T")[0],
+      timeSlots: "09:00-12:00", // 默认值，实际应该从schedule中获取
+      repeat: "none", // 默认值
+      priority: 2, // 默认值
+      status: plan.completed_dates?.length > 0 ? "completed" : "active",
+      progress: plan.completed_dates?.length > 0 ? 100 : 0,
+      notes: plan.notes || "",
+      createdAt: plan.created_at || new Date().toISOString().split("T")[0],
+      completedAt:
+        plan.completed_dates?.length > 0
+          ? plan.completed_dates[plan.completed_dates.length - 1]
+          : null,
+      isActive: plan.is_active || false,
+      daysElapsed: plan.days_elapsed || 0,
+      daysRemaining: plan.days_remaining || 0,
+    }));
+
+    // 如果没有数据，显示空状态，不显示演示数据
+    if (plans.value.length === 0) {
+      // 不显示演示数据，让用户创建自己的计划
+      console.log("用户暂无计划，显示空状态");
+    }
+  } catch (error) {
+    console.error("加载计划数据失败:", error);
+
+    // 提供更详细的错误信息
+    let errorMessage = "加载计划数据失败，请稍后重试";
+    if (error.message && error.message.includes("Failed to fetch")) {
+      errorMessage = "无法连接到服务器，请检查后端服务是否运行";
+    } else if (error.message && error.message.includes("NetworkError")) {
+      errorMessage = "网络连接失败，请检查网络设置";
+    } else if (error.message && error.message.includes("timeout")) {
+      errorMessage = "请求超时，服务器响应过慢";
+    } else if (
+      (error.message && error.message.includes("401")) ||
+      error.message.includes("未授权")
+    ) {
+      errorMessage = "请先登录以查看计划数据";
+    }
+
+    ElMessage.error(errorMessage);
+
+    // 只有在API完全失败时才显示演示数据
+    if (error.message && error.message.includes("Failed to fetch")) {
+      // 使用模拟数据作为后备
+      plans.value = [
+        {
+          id: "1",
+          goal: "学习Vue 3和Composition API",
+          targetDate: "2026-05-15",
+          timeSlots: "09:00-12:00, 14:00-17:00",
+          repeat: "daily",
+          priority: 3,
+          status: "active",
+          progress: 65,
+          notes: "重点学习响应式系统和组合式函数",
+          createdAt: "2026-04-10",
+          completedAt: null,
+          isActive: true,
+          daysElapsed: 10,
+          daysRemaining: 25,
+        },
+        {
+          id: "2",
+          goal: "完成健身计划",
+          targetDate: "2026-06-30",
+          timeSlots: "18:00-19:30",
+          repeat: "weekly",
+          priority: 2,
+          status: "active",
+          progress: 40,
+          notes: "每周三次力量训练，两次有氧运动",
+          createdAt: "2026-04-01",
+          completedAt: null,
+          isActive: false,
+          daysElapsed: 19,
+          daysRemaining: 71,
+        },
+      ];
+
+      // 添加一个提示，告诉用户这是演示数据
+      setTimeout(() => {
+        ElMessage.info("当前显示的是演示数据，真实数据将在后端服务正常后显示");
+      }, 500);
+    }
+  } finally {
+    loading.value = false;
+  }
+};
 
 // 对话框状态
 const planDetailVisible = ref(false);
@@ -762,7 +808,7 @@ const getProgressColor = (progress) => {
 
 // 页面加载时初始化
 onMounted(() => {
-  // 可以在这里加载用户的计划数据
+  loadPlans();
 });
 </script>
 

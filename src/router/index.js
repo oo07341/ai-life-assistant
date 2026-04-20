@@ -9,6 +9,8 @@ const Profile = () => import("../views/Profile.vue");
 const Login = () => import("../views/Login.vue");
 const Register = () => import("../views/Register.vue");
 const Plans = () => import("../views/Plans.vue");
+const Search = () => import("../views/Search.vue");
+const PriceSearch = () => import("../views/PriceSearch.vue");
 
 const routes = [
   {
@@ -74,6 +76,24 @@ const routes = [
     meta: {
       title: "计划管理 - 喂来日程",
       requiresAuth: true, // 需要登录
+    },
+  },
+  {
+    path: "/search",
+    name: "Search",
+    component: Search,
+    meta: {
+      title: "智能搜索 - 喂来日程",
+      requiresAuth: false,
+    },
+  },
+  {
+    path: "/price-search",
+    name: "PriceSearch",
+    component: PriceSearch,
+    meta: {
+      title: "价格查询 - 喂来日程",
+      requiresAuth: false,
     },
   },
   // 重定向到首页

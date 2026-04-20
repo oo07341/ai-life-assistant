@@ -6,7 +6,7 @@ import requests
 from config import Config
 
 def parse_intent(query: str) -> dict:
-    """调用 DeepSeek API 解析用户意图（保持不变）"""
+    """调用 DeepSeek API 解析用户意图，添加降级机制"""
     default_response = {
         "intent": "general",
         "product_keywords": [],
@@ -21,6 +21,59 @@ def parse_intent(query: str) -> dict:
 
     if not query or not isinstance(query, str):
         return default_response
+
+    # 简单的本地意图分析作为降级方案
+    def local_intent_analysis(query_text):
+        """本地意图分析，当API不可用时使用"""
+        query_lower = query_text.lower()
+        
+        # 购物意图关键词
+        shopping_keywords = ["吃", "外卖", "点餐", "买", "购物", "订", "餐厅", "饭店", 
+                           "披萨", "麻辣烫", "汉堡", "奶茶", "咖啡", "烧烤", "火锅"]
+        
+        # 日程意图关键词
+        schedule_keywords = ["计划", "安排", "日程", "时间表", "复习", "学习", "备考",
+                           "会议", "提醒", "约会", "考试", "作业", "任务", "项目"]
+        
+        # 商品关键词提取
+        product_keywords = []
+        for keyword in ["披萨", "麻辣烫", "汉堡", "奶茶", "烧烤", "火锅", "寿司", "炸鸡", "咖啡", "蛋糕"]:
+            if keyword in query_text:
+                product_keywords.append(keyword)
+        
+        # 位置提示
+        location_hint = "不限"
+        if "校内" in query_text:
+            location_hint = "校内"
+        elif "校外" in query_text:
+            location_hint = "校外"
+        
+        # 判断意图
+        intent = "general"
+        if any(keyword in query_lower for keyword in shopping_keywords):
+            intent = "shopping"
+        elif any(keyword in query_lower for keyword in schedule_keywords):
+            intent = "schedule"
+        
+        return {
+            "intent": intent,
+            "product_keywords": product_keywords,
+            "location_hint": location_hint,
+            "schedule_info": {
+                "goal": "学习计划" if "学习" in query_lower else "工作计划" if "工作" in query_lower else "个人计划",
+                "target_date": None,
+                "daily_hours": 4,
+                "subjects": []
+            }
+        }
+
+    # 首先尝试本地分析作为快速响应
+    local_result = local_intent_analysis(query)
+    
+    # 如果没有API密钥，直接返回本地分析结果
+    if not Config.DEEPSEEK_API_KEY:
+        print(f"[DeepSeek] 无API密钥，使用本地意图分析")
+        return local_result
 
     headers = {
         "Authorization": f"Bearer {Config.DEEPSEEK_API_KEY}",
@@ -56,11 +109,12 @@ def parse_intent(query: str) -> dict:
     }
 
     try:
-        resp = requests.post(Config.DEEPSEEK_API_URL, headers=headers, json=payload, timeout=10)
+        resp = requests.post(Config.DEEPSEEK_API_URL, headers=headers, json=payload, timeout=5)
         resp.raise_for_status()
         content = resp.json()["choices"][0]["message"]["content"].strip()
         if not content:
-            return default_response
+            print(f"[DeepSeek] API返回空内容，使用本地意图分析")
+            return local_result
 
         # 解析 JSON
         try:
@@ -84,13 +138,27 @@ def parse_intent(query: str) -> dict:
             schedule_info.setdefault("subjects", ["复习"])
             result["schedule_info"] = schedule_info
         else:
-            result["schedule_info"] = None
+            # 保持默认的schedule_info结构，而不是设置为None
+            result["schedule_info"] = {
+                "goal": "",
+                "target_date": None,
+                "daily_hours": 4,
+                "subjects": []
+            }
 
+        print(f"[DeepSeek] API调用成功: {result.get('intent')}")
         return result
 
+    except requests.exceptions.Timeout:
+        print(f"[DeepSeek] API请求超时，使用本地意图分析")
+        return local_result
+    except requests.exceptions.ConnectionError:
+        print(f"[DeepSeek] 网络连接失败，使用本地意图分析")
+        return local_result
     except Exception as e:
-        print(f"[ERROR] parse_intent failed: {e}")
-        return default_response
+        # 如果 API 调用失败，返回本地分析结果
+        print(f"[DeepSeek] 意图解析失败: {e}，使用本地意图分析")
+        return local_result
 
 
 def generate_ai_schedule(goal: str, target_date: str, daily_hours: float = 4.0, subjects: list = None) -> dict:
@@ -98,8 +166,8 @@ def generate_ai_schedule(goal: str, target_date: str, daily_hours: float = 4.0, 
     调用 DeepSeek API 生成个性化学习计划
     返回包含 AI 生成阶段和任务的结构，失败时返回 ai_generated=False
     """
-    if subjects is None:
-        subjects = []
+    # 确保subjects是列表
+    subjects_list = subjects if subjects is not None else []
 
     default_response = {
         "ai_generated": False,
@@ -124,7 +192,7 @@ def generate_ai_schedule(goal: str, target_date: str, daily_hours: float = 4.0, 
         "Content-Type": "application/json"
     }
 
-    subjects_text = "、".join(subjects) if subjects else "相关科目"
+    subjects_text = "、".join(subjects_list) if subjects_list else "相关科目"
     prompt = f"""
 你是一位专业的学业规划师。请根据以下信息为用户生成一个详细的备考计划建议。
 

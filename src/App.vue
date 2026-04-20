@@ -9,6 +9,8 @@ import {
   Menu as IconMenu,
   SwitchButton,
   Setting,
+  Search,
+  Document,
 } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 
@@ -47,8 +49,15 @@ const showNavigation = computed(() => {
 // 导航菜单项
 const menuItems = [
   { name: "Home", path: "/", icon: HomeFilled, label: "首页" },
-  { name: "Price", path: "/price", icon: ShoppingCart, label: "一点外卖" },
+  { name: "Search", path: "/search", icon: Search, label: "智能搜索" },
+  {
+    name: "PriceSearch",
+    path: "/price-search",
+    icon: ShoppingCart,
+    label: "价格查询",
+  },
   { name: "Schedule", path: "/schedule", icon: Calendar, label: "未来日程" },
+  { name: "Plans", path: "/plans", icon: Document, label: "计划管理" },
   { name: "Profile", path: "/profile", icon: User, label: "个人中心" },
 ];
 
