@@ -113,4 +113,17 @@ import HelpGuide from "@/components/profile/HelpGuide.vue";
     font-size: 24px;
   }
 }
+
+/* 深色主题样式 */
+:deep(.dark-theme) .profile-page {
+  background: #1a202c;
+}
+
+:deep(.dark-theme) .page-header h1 {
+  color: #e2e8f0;
+}
+
+:deep(.dark-theme) .page-subtitle {
+  color: #a0aec0;
+}
 </style>

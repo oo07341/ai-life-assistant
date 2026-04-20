@@ -204,7 +204,7 @@ const saveSettings = async () => {
     localStorage.setItem("systemSettings", JSON.stringify(settings));
 
     // 应用主题
-    applyTheme(theme.value);
+    applyThemeLocal(theme.value);
 
     await new Promise((resolve) => setTimeout(resolve, 500)); // 模拟保存延迟
 
@@ -216,8 +216,8 @@ const saveSettings = async () => {
   }
 };
 
-// 应用主题
-const applyTheme = (themeValue) => {
+// 应用主题（本地函数，避免与main.js中的函数冲突）
+const applyThemeLocal = (themeValue) => {
   const html = document.documentElement;
 
   if (themeValue === "dark") {
@@ -240,6 +240,8 @@ const applyTheme = (themeValue) => {
 // 切换主题
 const changeTheme = (newTheme) => {
   theme.value = newTheme;
+  // 立即应用主题，无需等待保存
+  applyThemeLocal(newTheme);
 };
 
 // 导出数据
@@ -338,7 +340,7 @@ const resetToCurrent = () => {
 // 初始化
 onMounted(() => {
   loadSettings();
-  applyTheme(theme.value);
+  applyThemeLocal(theme.value);
 });
 </script>
 

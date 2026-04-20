@@ -545,4 +545,73 @@ const resetFeedback = () => {
     padding: 16px;
   }
 }
+
+/* 深色主题样式 */
+:global(.dark-theme) .help-guide-card {
+  background: #2d3748;
+  border-color: #4a5568;
+}
+
+:global(.dark-theme) .card-header {
+  color: #e2e8f0;
+}
+
+:global(.dark-theme) .section-title {
+  color: #e2e8f0;
+}
+
+:global(.dark-theme) .section-subtitle {
+  color: #a0aec0;
+}
+
+:global(.dark-theme) .feature-section {
+  background: #4a5568;
+  border-color: #718096;
+}
+
+:global(.dark-theme) .feature-section h4 {
+  color: #e2e8f0;
+}
+
+:global(.dark-theme) .feature-section p {
+  color: #cbd5e0;
+}
+
+:global(.dark-theme) .contact-item {
+  border-color: #4a5568;
+}
+
+:global(.dark-theme) .contact-item:hover {
+  background: #4a5568;
+}
+
+:global(.dark-theme) .contact-label {
+  color: #e2e8f0;
+}
+
+:global(.dark-theme) .contact-value {
+  color: #cbd5e0;
+}
+
+:global(.dark-theme) .faq-item h4 {
+  color: #e2e8f0;
+}
+
+:global(.dark-theme) .faq-item p,
+:global(.dark-theme) .faq-item li {
+  color: #cbd5e0;
+}
+
+:global(.dark-theme) .feedback-form {
+  background: #4a5568;
+  border-color: #718096;
+}
+
+:global(.dark-theme) .feedback-form h4 {
+  color: #e2e8f0;
+}
+
+:global(.dark-theme) .feedback-form p {
+  color: #cbd5e0;
+}
 </style>

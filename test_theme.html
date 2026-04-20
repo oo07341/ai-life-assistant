@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>主题切换测试</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f5f7fa;
+        color: #333;
+        transition: all 0.3s ease;
+      }
+
+      .dark-theme {
+        background: #1a202c;
+        color: #e2e8f0;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        color: #667eea;
+      }
+
+      .dark-theme h1 {
+        color: #63b3ed;
+      }
+
+      .theme-buttons {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      #lightBtn {
+        background: #667eea;
+        color: white;
+      }
+
+      #darkBtn {
+        background: #4a5568;
+        color: white;
+      }
+
+      #autoBtn {
+        background: #48bb78;
+        color: white;
+      }
+
+      .test-section {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .dark-theme .test-section {
+        background: #2d3748;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .current-theme {
+        font-weight: bold;
+        color: #48bb78;
+      }
+
+      .dark-theme .current-theme {
+        color: #68d391;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>主题切换功能测试</h1>
+
+      <div class="theme-buttons">
+        <button id="lightBtn">浅色主题</button>
+        <button id="darkBtn">深色主题</button>
+        <button id="autoBtn">跟随系统</button>
+      </div>
+
+      <div class="test-section">
+        <h2>当前主题: <span id="themeStatus">浅色</span></h2>
+        <p>这是一个测试段落，用于展示主题切换效果。</p>
+        <p>深色主题应该改变背景色、文字颜色和组件样式。</p>
+      </div>
+
+      <div class="test-section">
+        <h3>测试说明</h3>
+        <p>1. 点击"深色主题"按钮，页面应该变为深色样式</p>
+        <p>2. 点击"浅色主题"按钮，页面应该恢复浅色样式</p>
+        <p>3. "跟随系统"会根据系统主题设置自动切换</p>
+        <p>4. 检查控制台查看localStorage中的主题设置</p>
+      </div>
+
+      <div class="test-section">
+        <h3>当前localStorage设置</h3>
+        <pre id="storageInfo"></pre>
+      </div>
+    </div>
+
+    <script>
+      const html = document.documentElement;
+      const themeStatus = document.getElementById("themeStatus");
+      const storageInfo = document.getElementById("storageInfo");
+
+      // 应用主题
+      function applyTheme(themeValue) {
+        if (themeValue === "dark") {
+          html.classList.add("dark-theme");
+          themeStatus.textContent = "深色";
+        } else if (themeValue === "light") {
+          html.classList.remove("dark-theme");
+          themeStatus.textContent = "浅色";
+        } else if (themeValue === "auto") {
+          // 跟随系统
+          const prefersDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          if (prefersDark) {
+            html.classList.add("dark-theme");
+            themeStatus.textContent = "深色（系统）";
+          } else {
+            html.classList.remove("dark-theme");
+            themeStatus.textContent = "浅色（系统）";
+          }
+        }
+
+        // 保存到localStorage
+        const settings = {
+          theme: themeValue,
+          savedAt: new Date().toISOString(),
+        };
+        localStorage.setItem("systemSettings", JSON.stringify(settings));
+
+        updateStorageInfo();
+      }
+
+      // 更新存储信息显示
+      function updateStorageInfo() {
+        const settings = localStorage.getItem("systemSettings");
+        storageInfo.textContent = settings
+          ? JSON.stringify(JSON.parse(settings), null, 2)
+          : "暂无设置";
+      }
+
+      // 加载设置
+      function loadSettings() {
+        try {
+          const savedSettings = localStorage.getItem("systemSettings");
+          if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            applyTheme(settings.theme || "light");
+          } else {
+            applyTheme("light");
+          }
+        } catch (error) {
+          console.error("加载设置失败:", error);
+          applyTheme("light");
+        }
+      }
+
+      // 按钮事件
+      document
+        .getElementById("lightBtn")
+        .addEventListener("click", () => applyTheme("light"));
+      document
+        .getElementById("darkBtn")
+        .addEventListener("click", () => applyTheme("dark"));
+      document
+        .getElementById("autoBtn")
+        .addEventListener("click", () => applyTheme("auto"));
+
+      // 监听系统主题变化
+      window
+        .matchMedia("(prefers-color-scheme: dark)")
+        .addEventListener("change", (e) => {
+          const settings = localStorage.getItem("systemSettings");
+          if (settings) {
+            const parsed = JSON.parse(settings);
+            if (parsed.theme === "auto") {
+              applyTheme("auto");
+            }
+          }
+        });
+
+      // 初始化
+      loadSettings();
+      updateStorageInfo();
+
+      console.log("主题切换测试页面已加载");
+      console.log(
+        "当前localStorage中的systemSettings:",
+        localStorage.getItem("systemSettings"),
+      );
+    </script>
+  </body>
+</html>

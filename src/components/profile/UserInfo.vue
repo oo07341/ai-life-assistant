@@ -1,98 +1,153 @@
 <template>
-  <el-card class="user-card" shadow="hover">
+  <el-card class="user-info-card" shadow="hover">
     <template #header>
       <div class="card-header">
-        <el-icon><UserFilled /></el-icon>
+        <el-icon><User /></el-icon>
         <span>个人信息</span>
       </div>
     </template>
 
-    <div class="user-info">
+    <!-- 用户头像和基本信息 -->
+    <div class="user-profile">
       <div class="avatar-section">
-        <div class="avatar">
-          <el-avatar :size="80" :icon="UserFilled" />
-        </div>
-        <div class="user-basic">
-          <h3>喂来日程用户</h3>
-          <p class="user-email">user@example.com</p>
-          <el-tag type="success" size="small">普通用户</el-tag>
+        <div class="avatar-container">
+          <div class="avatar-placeholder">
+            <el-icon><UserFilled /></el-icon>
+          </div>
+          <el-button type="primary" size="small" class="avatar-upload-btn">
+            <el-icon><Upload /></el-icon>
+            更换头像
+          </el-button>
         </div>
       </div>
 
-      <div class="user-stats">
-        <div class="stat-item">
-          <div class="stat-value">{{ stats.priceComparisonCount || 0 }}</div>
-          <div class="stat-label">比价次数</div>
+      <div class="info-section">
+        <div class="info-row">
+          <span class="info-label">用户名</span>
+          <span class="info-value">{{ userInfo.username }}</span>
         </div>
-        <div class="stat-item">
-          <div class="stat-value">{{ stats.futureScheduleCount || 0 }}</div>
-          <div class="stat-label">未来日程</div>
+        <div class="info-row">
+          <span class="info-label">邮箱</span>
+          <span class="info-value">{{ userInfo.email }}</span>
         </div>
-        <div class="stat-item">
-          <div class="stat-value">{{ stats.calendarFileCount || 0 }}</div>
-          <div class="stat-label">日历文件</div>
+        <div class="info-row">
+          <span class="info-label">注册时间</span>
+          <span class="info-value">{{
+            formatDate(userInfo.registerDate)
+          }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">会员状态</span>
+          <el-tag :type="userInfo.isPremium ? 'success' : 'info'" size="small">
+            {{ userInfo.isPremium ? "高级会员" : "普通用户" }}
+          </el-tag>
         </div>
       </div>
+    </div>
+
+    <!-- 使用统计 -->
+    <div class="usage-stats">
+      <h3 class="stats-title">
+        <el-icon><DataLine /></el-icon> 使用统计
+      </h3>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value">{{ userStats.priceQueries }}</div>
+          <div class="stat-label">比价查询</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{ userStats.scheduleEvents }}</div>
+          <div class="stat-label">日程事件</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{ userStats.totalSearches }}</div>
+          <div class="stat-label">总搜索次数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{ userStats.activeDays }}</div>
+          <div class="stat-label">活跃天数</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="action-buttons">
+      <el-button type="primary" @click="editProfile">
+        <el-icon><Edit /></el-icon>
+        编辑资料
+      </el-button>
+      <el-button @click="changePassword">
+        <el-icon><Lock /></el-icon>
+        修改密码
+      </el-button>
+      <el-button type="info" @click="viewActivity">
+        <el-icon><Histogram /></el-icon>
+        查看活动
+      </el-button>
     </div>
   </el-card>
 </template>
 
 <script setup>
-import { UserFilled } from "@element-plus/icons-vue";
-import { ref, onMounted } from "vue";
-import { userAPI, planAPI } from "@/services/api.js";
+import {
+  User,
+  UserFilled,
+  Upload,
+  DataLine,
+  Edit,
+  Lock,
+  Histogram,
+} from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
 
-const stats = ref({
-  priceComparisonCount: 0,
-  futureScheduleCount: 0,
-  calendarFileCount: 0,
-});
+// 用户信息
+const userInfo = {
+  username: "AI助手用户",
+  email: "user@example.com",
+  registerDate: "2024-01-15",
+  isPremium: true,
+};
 
-// 模拟用户ID（实际项目中应从登录状态获取）
-const mockUserId = "test-user-123";
+// 使用统计
+const userStats = {
+  priceQueries: 128,
+  scheduleEvents: 45,
+  totalSearches: 256,
+  activeDays: 89,
+};
 
-async function loadUserStats() {
+// 格式化日期
+const formatDate = (dateString) => {
   try {
-    // 使用新的stats接口获取统计数据
-    const statsData = await userAPI.getStats();
-
-    stats.value = {
-      priceComparisonCount: statsData.price_comparison_count || 0,
-      futureScheduleCount: statsData.future_schedule_count || 0,
-      calendarFileCount: statsData.calendar_file_count || 0,
-    };
+    const date = new Date(dateString);
+    return date.toLocaleDateString("zh-CN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   } catch (error) {
-    console.error("加载用户统计信息失败:", error);
-    // 如果新接口失败，回退到旧方法
-    try {
-      const profile = await userAPI.getProfile();
-      const plans = await planAPI.getPlans();
-      const calendarFileCount = plans.filter((plan) => plan.ics_content).length;
-
-      stats.value = {
-        priceComparisonCount: 12, // 临时模拟数据
-        futureScheduleCount: profile.plan_count || plans.length || 0,
-        calendarFileCount: calendarFileCount,
-      };
-    } catch (fallbackError) {
-      console.error("回退方法也失败:", fallbackError);
-      // 使用默认值
-      stats.value = {
-        priceComparisonCount: 0,
-        futureScheduleCount: 0,
-        calendarFileCount: 0,
-      };
-    }
+    return dateString;
   }
-}
+};
 
-onMounted(() => {
-  loadUserStats();
-});
+// 编辑资料
+const editProfile = () => {
+  ElMessage.info("编辑资料功能开发中");
+};
+
+// 修改密码
+const changePassword = () => {
+  ElMessage.info("修改密码功能开发中");
+};
+
+// 查看活动
+const viewActivity = () => {
+  ElMessage.info("查看活动功能开发中");
+};
 </script>
 
 <style scoped>
-.user-card {
+.user-info-card {
   height: fit-content;
 }
 
@@ -108,72 +163,181 @@ onMounted(() => {
   color: #667eea;
 }
 
-.user-info {
+.user-profile {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
+  gap: 32px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
 }
 
 .avatar-section {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.avatar {
   flex-shrink: 0;
 }
 
-.user-basic h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a202c;
-  margin: 0 0 8px 0;
-}
-
-.user-email {
-  font-size: 14px;
-  color: #718096;
-  margin: 0 0 12px 0;
-}
-
-.user-stats {
-  display: flex;
-  justify-content: space-around;
-  padding: 16px;
-  background: #f7fafc;
-  border-radius: 8px;
-}
-
-.stat-item {
+.avatar-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 12px;
+}
+
+.avatar-placeholder {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 48px;
+}
+
+.avatar-upload-btn {
+  width: 100%;
+}
+
+.info-section {
+  flex: 1;
+  min-width: 200px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.info-label {
+  width: 80px;
+  font-weight: 500;
+  color: #4a5568;
+  flex-shrink: 0;
+}
+
+.info-value {
+  flex: 1;
+  color: #1a202c;
+}
+
+.usage-stats {
+  margin-bottom: 32px;
+}
+
+.stats-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stats-title .el-icon {
+  color: #4299e1;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.stat-item {
+  background: #f7fafc;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
   color: #667eea;
+  margin-bottom: 4px;
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 14px;
   color: #718096;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .avatar-section {
+  .user-profile {
     flex-direction: column;
-    text-align: center;
-    gap: 16px;
+    gap: 24px;
   }
 
-  .user-stats {
-    flex-direction: column;
-    gap: 16px;
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-buttons .el-button {
+    width: 100%;
+  }
+}
+
+/* 深色主题样式 */
+:global(.dark-theme) .user-info-card {
+  background: #2d3748;
+  border-color: #4a5568;
+}
+
+:global(.dark-theme) .card-header {
+  color: #e2e8f0;
+}
+
+:global(.dark-theme) .info-label {
+  color: #cbd5e0;
+}
+
+:global(.dark-theme) .info-value {
+  color: #e2e8f0;
+}
+
+:global(.dark-theme) .info-row {
+  border-bottom-color: #4a5568;
+}
+
+:global(.dark-theme) .stats-title {
+  color: #e2e8f0;
+}
+
+:global(.dark-theme) .stat-item {
+  background: #4a5568;
+}
+
+:global(.dark-theme) .stat-value {
+  color: #63b3ed;
+}
+
+:global(.dark-theme) .stat-label {
+  color: #a0aec0;
 }
 </style>
